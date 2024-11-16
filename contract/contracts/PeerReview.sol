@@ -39,8 +39,11 @@ contract PeerReview is AccessControl {
   uint64 private _evaluationSchemaId;
   mapping(address => User) public userProfiles;
   mapping (address => address[]) public evaluatorOf;
+  address[] private higher_level;
+  address[] private equivalent_level;
+  address[] private lower_level;
 
-  event createEvaluatorOfEvent(address user, address[] evaluators);
+  event createEvaluatorOfEvent(address user, uint projectId, address[] evaluators);
   event completeProjectEvent(address user, uint projectId, uint amount);
   event submitAttestationEvent(address evaluatee, uint projectId, uint score, string evaluationFeedback);
    
@@ -101,7 +104,7 @@ contract PeerReview is AccessControl {
     userProfiles[userAddress].completedProjects.push(projectId);
     userProfiles[userAddress].currentProject = 0;
 
-    completeProjectEvent(userAddress, projectId, amount);
+    emit completeProjectEvent(userAddress, projectId, amount);
   }
 
   // function createNewProject(string calldata name, string calldata description) external useRole(OWNER_ROLE) {
@@ -151,7 +154,7 @@ contract PeerReview is AccessControl {
     revokeRole(EVALUATEE_ROLE, evaluatee);
   }
 
-  function randomNumberGenerator(uint max) private returns (uint) {
+  function randomNumberGenerator(uint max) private view returns (uint) {
       return uint(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender))) % max;
   }
 
@@ -163,10 +166,8 @@ contract PeerReview is AccessControl {
   // }
 
   //TODO: Function to set the evaluation, random matching
-  function matchmaking(address evaluatee) public {
-    address[] memory higher_level;
-    address[] memory equivalent_level;
-    address[] memory lower_level;
+  function matchmaking(uint projectId) public {
+    
     for (uint i = 0; i < _userArray.length; i++) {
       if (_userArray[i] != msg.sender) {
         uint evaluator_points = userProfiles[_userArray[i]].points;
@@ -181,27 +182,30 @@ contract PeerReview is AccessControl {
     }
     if (higher_level.length > 0) {
         uint randomIndex = randomNumberGenerator(higher_level.length);
-        setEvaluator(higher_level[randomIndex],evaluatorOf[msg.sender])
+        setEvaluator(higher_level[randomIndex], msg.sender);
     }
 
     if (equivalent_level.length > 0) {
         uint randomIndex = randomNumberGenerator(equivalent_level.length);
-        setEvaluator(equivalent_level[randomIndex],evaluatorOf[msg.sender])
+        setEvaluator(equivalent_level[randomIndex], msg.sender);
     }
 
     if (lower_level.length > 0) {
         uint randomIndex = randomNumberGenerator(lower_level.length);
-        setEvaluator(lower_level[randomIndex],evaluatorOf[msg.sender])
+        setEvaluator(lower_level[randomIndex], msg.sender);
     }
+    delete higher_level;
+    delete equivalent_level;
+    delete lower_level;
 
-    emit createEvaluatorOfEvent(msg.sender, evaluatorOf[msg.sender]);
+    emit createEvaluatorOfEvent(msg.sender, projectId, evaluatorOf[msg.sender]);
   }
 
-  function submitEvaluation(
+  function submitEvaluation (
     Evaluations memory evaluationData
-  ) external useRole(EVALUATOR_ROLE) {
+  ) external useRole(EVALUATOR_ROLE) returns(uint) {
     require(
-      msg.sender == evaluatorOf[evaluationData.evaluatee],
+      msg.sender == evaluationData.evaluatee,
       'This user not authorized to evaluate the evaluatee.'
     );
     uint projectId = evaluationData.projectId;
