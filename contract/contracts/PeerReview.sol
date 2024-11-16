@@ -85,20 +85,29 @@ contract PeerReview is AccessControl {
     });
   }
 
+  function checkProjectExists(uint256 projectId) external returns (bool) {
+    return projectId <= _projectMappingNumber && projectId > 0;
+  }
+
   function addUserPoints(address userAddress, uint256 amount) external useRole(ADMIN_ROLE) {
     require(userProfiles[userAddress].created == true, "User does not exists");
     userProfiles[userAddress].points += amount;
   }
 
-  function completeProject(address userAddress, uint256 projectId, uint256 amount) external useRole(ADMIN_ROLE) {
+  function completeProject(address userAddress, uint256 projectId, uint256 amount, bool pass) external useRole(ADMIN_ROLE) {
     require(userProfiles[userAddress].created == true, "User does not exists");
     require(userProfiles[userAddress].currentProject == projectId, "Project has not started by this user");
-    
-    userProfiles[userAddress].points += amount;
-    userProfiles[userAddress].completedProjects.push(projectId);
-    userProfiles[userAddress].currentProject = 0;
 
-    // TODO: emit event??
+    uint256 score = pass ? amount : 0;
+    
+    userProfiles[userAddress].points += score;
+    userProfiles[userAddress].currentProject = 0;
+    if (score > 0) {
+      userProfiles[userAddress].completedProjects.push(projectId);
+      // TODO: emit pass event
+    } else {
+      //TODO: emit fail event
+    }
   }
 
   function createNewProject(string calldata name, string calldata description) external useRole(OWNER_ROLE) {
