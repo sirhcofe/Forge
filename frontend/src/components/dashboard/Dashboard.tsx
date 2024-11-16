@@ -3,16 +3,17 @@ import Badges from "./Badges";
 import Evaluations from "./Evaluations";
 import LogTime from "./LogTime";
 import MainContent from "./MainContent";
-import Notification from "./Notification";
+import Updates from "./Updates";
 import Points from "./Points";
 import Projects from "./Projects";
+import ProjectsHistory from "./ProjectHistory";
 
 const Dashboard = () => {
   return (
     <div className="w-full min-h-screen max-h-screen bg-background-dark grid grid-cols-[repeat(11,minmax(0,1fr))] grid-rows-[repeat(10,minmax(0,1fr))] gap-3 p-4">
       <Card
         className="row-span-4 col-span-3 h-full w-full"
-        layout={<Notification />}
+        layout={<Updates />}
       />
       <Card
         className="row-span-5 col-span-5 h-full w-full"
@@ -25,7 +26,7 @@ const Dashboard = () => {
       />
       <Card
         className="row-span-6 col-span-3 h-full w-full"
-        layout={<Projects />}
+        layout={<ProjectsHistory />}
       />
       <Card
         className="row-span-3 col-span-5 h-full w-full"

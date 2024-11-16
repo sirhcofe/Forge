@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Button from "../Button";
+import { LuTimer } from "react-icons/lu";
 
 const NoEval = () => {
   return (
@@ -19,34 +20,38 @@ const CurrentEval = ({ currentEval }: { currentEval: any }) => {
       {currentEval.map((evall: any, index: number) => {
         return (
           <>
-            {evall.evalOthers ? (
-              <div
-                className={`flex bg-gradient-to-r from-primary-light to-transparent to-10% py-1 ${
-                  index && `border-t border-black/50`
-                }`}
-                key={index}
-              >
-                <p className="w-full px-3 text-xs">
+            {index ? <div className="w-full h-[1px] bg-black/50" /> : null}
+            <div
+              className={`flex flex-col my-1 py-1 gap-y-1 ${
+                evall.evalOthers
+                  ? "bg-gradient-to-r from-primary-light to-transparent to-10%"
+                  : "bg-gradient-to-l from-accent to-transparent to-10%"
+              }`}
+            >
+              {evall.evalOthers ? (
+                <p className="w-full px-3 text-sm" key={index}>
                   You will evaluate someone's {evall.project}!
                 </p>
-              </div>
-            ) : (
-              <div
-                className={`flex bg-gradient-to-l from-accent to-transparent to-10% py-1 ${
-                  index && `border-t border-black/50`
-                }`}
-                key={index}
-              >
-                <p className="w-full px-3 text-xs">
+              ) : (
+                <p className="w-full px-3 text-sm" key={index}>
                   You will be evaluated on {evall.project}!
                 </p>
+              )}
+              <div className="w-full flex items-center px-3 gap-x-1">
+                <LuTimer />
+                <p className="flex flex-1">3h</p>
+                <Button
+                  className="text-sm !py-1 !px-6 !mr-8"
+                  onClick={() => null}
+                  small
+                >
+                  Contact
+                </Button>
               </div>
-            )}
+            </div>
           </>
         );
       })}
-
-      <Button className="mt-auto">Submit project</Button>
     </div>
   );
 };
