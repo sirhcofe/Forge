@@ -6,6 +6,7 @@ export type Web3AuthContextType = {
   user: Partial<AuthUserInfo & { address: `0x${string}` }> | undefined;
   viemPublicClient?: PublicClient;
   viemWalletClient?: WalletClient;
+  pushWalletClient?: WalletClient;
   smartWallet: BiconomySmartAccountV2 | undefined;
   login: () => Promise<void>;
   logout: () => Promise<void>;

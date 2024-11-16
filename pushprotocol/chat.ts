@@ -7,21 +7,21 @@ const firstSigner = ethers.Wallet.createRandom()
 const secondSigner = ethers.Wallet.createRandom()
 console.log('First user privateKey: ', firstSigner.privateKey)
 
-const main = async () => { 
+const main = async () => {
 	console.log('Creating 2 users..')
-	const firstUser = await PushAPI.initialize(firstSigner, {env})
-	const secondUser = await PushAPI.initialize(secondSigner, {env})
+	const firstUser = await PushAPI.initialize(firstSigner, { env })
+	const secondUser = await PushAPI.initialize(secondSigner, { env })
 	console.log('2 user created')
 
 	console.log('send msg from 1st user to 2nd user')
-	await firstUser.chat.send(secondSigner.address, {content: 'Hello from first user', type: 'Text'})
+	await firstUser.chat.send(secondSigner.address, { content: 'Hello from first user', type: 'Text' })
 
 	console.log('Accept request from first user')
 	await secondUser.chat.accept(firstSigner.address)
 
 	console.log('Reply back to first user')
-	await secondUser.chat.send(firstSigner.address, { content: 'hello back', type: 'Text'})
-	await secondUser.chat.send(firstSigner.address, {content: 'Nice meeting you', type: 'Text'})
+	await secondUser.chat.send(firstSigner.address, { content: 'hello back', type: 'Text' })
+	await secondUser.chat.send(firstSigner.address, { content: 'Nice meeting you', type: 'Text' })
 
 	console.log('Getting chat history from first user')
 	const myChats = await firstUser.chat.list('CHATS')
