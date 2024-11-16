@@ -27,7 +27,19 @@ contract PeerReview is AccessControl {
   bytes public constant OWNER_ROLE = keccak256("OWNER");
   private uint64 _schemaId;
 
-  mapping (address => uint256) public userPoints;
+  struct User {
+    string username;
+    uint256 points;
+  }
+
+  struct Project {
+    string name;
+    string description;
+  }
+
+  mapping (address => User) public userProfiles;
+  mapping (uint256 => Project) public projects;
+
   mapping (address => address) public evaluatorOf;
 
   constructor(uint64 schemaId) {
@@ -69,6 +81,7 @@ contract PeerReview is AccessControl {
   }
 
   //TODO: Function to set the evaluation, random matching
+  function matchmaking() {}
 
   function submitEvaluation(address evaluatee) external hasRole(EVALUATOR_ROLE) {
     require(msg.sender == evaluatorOf(evaluatee));
