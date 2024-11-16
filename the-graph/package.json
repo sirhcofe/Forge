@@ -1,13 +1,13 @@
 {
-  "name": "ethglobal2",
+  "name": "ethglobal",
   "license": "UNLICENSED",
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ ethglobal2",
-    "create-local": "graph create --node http://localhost:8020/ ethglobal2",
-    "remove-local": "graph remove --node http://localhost:8020/ ethglobal2",
-    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 ethglobal2",
+    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ ethglobal",
+    "create-local": "graph create --node http://localhost:8020/ ethglobal",
+    "remove-local": "graph remove --node http://localhost:8020/ ethglobal",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 ethglobal",
     "test": "graph test"
   },
   "dependencies": {
