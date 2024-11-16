@@ -47,10 +47,6 @@ const Dashboard = () => {
         className="row-span-3 row-start-8 col-start-9 col-span-3 h-full w-full"
         layout={<Evaluations />}
       />
-      <button
-        className="absolute top-40 right-40 w-5 h-5 bg-blue-600 z-20"
-        onClick={logout}
-      ></button>
     </motion.div>
   );
 };

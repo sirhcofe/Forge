@@ -10,6 +10,7 @@ import {
   IProvider,
   WALLET_ADAPTERS,
   WEB3AUTH_NETWORK,
+  ADAPTER_STATUS,
 } from "@web3auth/base";
 import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
 import { Web3AuthNoModal } from "@web3auth/no-modal";
@@ -29,6 +30,7 @@ import {
   createPaymaster,
   createSmartAccountClient,
   IPaymaster,
+  PaymasterMode,
 } from "@biconomy/account";
 import { ethers } from "ethers";
 
@@ -48,6 +50,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
   const [viemPublicClient, setViemPublicClient] = useState<PublicClient>();
   const [viemWalletClient, setViemWalletClient] = useState<WalletClient>();
+  //   const [smartWallet, setSmartWallet] = useState<WalletClient>();
   const [smartWallet, setSmartWallet] = useState<BiconomySmartAccountV2>();
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -70,20 +73,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           logo: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
         };
 
-        const accountAbstractionProvider = new AccountAbstractionProvider({
-          config: {
-            chainConfig,
-            smartAccountInit: new BiconomySmartAccount(),
-            bundlerConfig: {
-              url: import.meta.env.VITE_PIMLICO_RPC_URL,
-            },
-            paymasterConfig: {
-              url: `https://bundler.biconomy.io/api/v2/534351/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44`,
-            },
-          },
-        });
+        // const accountAbstractionProvider = new AccountAbstractionProvider({
+        //   config: {
+        //     chainConfig,
+        //     smartAccountInit: new BiconomySmartAccount(),
+        //     bundlerConfig: {
+        //       //   url: import.meta.env.VITE_PIMLICO_RPC_URL,
+        //       url: biconomyConfig.bundleUrl,
+        //       paymasterContext: {
+        //         mode: "SPONSORED",
+        //         calculateGasLimits: true,
+        //         expiryDuration: 300,
+        //         sponsorshipInfo: {
+        //           webhookData: {},
+        //           smartAccountInfo: {
+        //             name: "BICONOMY",
+        //             version: "2.0.0",
+        //           },
+        //         },
+        //       },
+        //     },
+        //     paymasterConfig: {
+        //       url: import.meta.env.VITE_BICONOMY_PAYMASTER_URL,
+        //     },
+        //   },
+        // });
 
-        console.log(accountAbstractionProvider);
+        // console.log(accountAbstractionProvider);
 
         const privateKeyProvider = new EthereumPrivateKeyProvider({
           config: { chainConfig },
@@ -93,6 +109,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           clientId: import.meta.env.VITE_WEB3AUTH_CLIENT_ID || "",
           web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
           privateKeyProvider,
+          //   accountAbstractionProvider,
         };
 
         const web3AuthInstance = new Web3AuthNoModal(web3AuthOptions);
@@ -122,14 +139,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
+    console.log("w3a provider", web3Auth);
     if (web3Auth && web3AuthProvider) {
-      if (web3Auth.connected && !isLoggedIn) postLoginFlow(web3AuthProvider);
+      if (web3Auth.status === ADAPTER_STATUS.CONNECTED && !isLoggedIn)
+        postLoginFlow(web3AuthProvider);
       setTimeout(() => {
         // small timeout to wait for set state to finish before setIsLoading to false
         setIsLoading(false);
       }, 300);
     }
-  }, [web3Auth, web3AuthProvider, isLoggedIn]);
+  }, [web3Auth?.status, web3AuthProvider, isLoggedIn]);
 
   const login = async () => {
     console.log(web3Auth);
@@ -182,6 +201,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const postLoginFlow = async (provider: IProvider | null) => {
+    console.log("here");
     if (!web3Auth?.connected || !provider) {
       toast.error("Login failed!");
       return;
@@ -200,22 +220,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       transport: custom(web3AuthProvider!),
     });
     setViemWalletClient(wClient);
-
-    console.log("here", web3Auth);
-    // const ethersProvider = new ethers.providers.Web3Provider(provider);
-    // const paymaster: IPaymaster = await createPaymaster({
-    //   paymasterUrl: `https://paymaster.biconomy.io/api/v1/534351/${biconomyConfig.biconomyPaymasterApiKey}`,
-    //   strictMode: false,
+    // const sw = createWalletClient({
+    //   account: address,
+    //   chain: scrollSepolia,
+    //   transport: custom(web3AuthProvider!),
     // });
-    // const smartWallet = await createSmartAccountClient({
-    //   signer: ethersProvider.getSigner(),
-    //   biconomyPaymasterApiKey: biconomyConfig.biconomyPaymasterApiKey,
-    //   bundlerUrl: biconomyConfig.bundleUrl,
-    //   paymaster: paymaster,
-    //   rpcUrl: "https://sepolia-rpc.scroll.io",
-    //   chainId: 534351,
-    // });
-    // setSmartWallet(smartWallet);
+    // console.log(sw);
+    // setSmartWallet(sw);
+    const ethersProvider = new ethers.providers.Web3Provider(provider);
+    const paymaster: IPaymaster = await createPaymaster({
+      paymasterUrl: `https://paymaster.biconomy.io/api/v1/534351/${biconomyConfig.biconomyPaymasterApiKey}`,
+      strictMode: false,
+    });
+    const smartWallet = await createSmartAccountClient({
+      signer: ethersProvider.getSigner(),
+      biconomyPaymasterApiKey: biconomyConfig.biconomyPaymasterApiKey,
+      bundlerUrl: biconomyConfig.bundleUrl,
+      paymaster: paymaster,
+      rpcUrl: "https://sepolia-rpc.scroll.io",
+      chainId: 534351,
+    });
+    setSmartWallet(smartWallet);
   };
 
   const logout = async () => {
