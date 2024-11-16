@@ -103,7 +103,7 @@ contract PeerReview is AccessControl {
   }
 
   function randomNumberGenerator(uint max) private returns (uint) {
-      return uint(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender)))) % max;
+      return uint(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender))) % max;
   }
 
   //TODO: Function to set the evaluation, random matching
@@ -138,16 +138,7 @@ contract PeerReview is AccessControl {
         evaluatorOf[msg.sender].push(lower_level[randomIndex]);
     }
 
-    emit createEvaluatorOfEvent(msg.sender, evaluatorOf[msg.sender])
-
-
-
-  }
-
-  function submitEvaluation(
-    address evaluatee
-  ) external hasRole(EVALUATOR_ROLE) {
-    require(msg.sender == evaluatorOf(evaluatee));
+    emit createEvaluatorOfEvent(msg.sender, evaluatorOf[msg.sender]);
   }
 
   function submitEvaluation(
