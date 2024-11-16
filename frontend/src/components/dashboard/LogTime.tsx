@@ -55,12 +55,12 @@ const LogTime = () => {
                 style={
                   index === 0
                     ? {
-                        gridColumnStart: 6,
-                        backgroundColor: `rgba(33,158,139,${date.count / 10})`,
-                      }
+                      gridColumnStart: 6,
+                      backgroundColor: `rgba(33,158,139,${date.count / 10})`,
+                    }
                     : {
-                        backgroundColor: `rgba(33,158,139,${date.count / 10})`,
-                      }
+                      backgroundColor: `rgba(33,158,139,${date.count / 10})`,
+                    }
                 }
               />
             );

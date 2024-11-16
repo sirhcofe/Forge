@@ -1,4 +1,4 @@
-import React, { ButtonHTMLAttributes, ReactNode, useState } from "react";
+import { ReactNode, useState } from "react";
 import { motion } from "framer-motion";
 import { LuArrowRight } from "react-icons/lu";
 
@@ -20,35 +20,37 @@ const Button = ({
   className = "",
   small = false,
   onClick,
+  disabled = false
 }: {
   children: ReactNode;
   className?: string;
   small?: boolean;
-  onClick: () => void;
+  onClick: (e: any) => void;
+  disabled?: boolean;
 }) => {
   const [clicked, setClicked] = useState(false);
   const [hovered, setHovered] = useState(false);
 
-  const handleClick = () => {
+  const handleClick = (e: any) => {
     setClicked(true);
-    onClick;
+    onClick(e);
   };
 
   return (
     <motion.button
+      disabled={disabled}
       className={
         `relative py-3 border-2 border-primary-dark text-black inline-block rounded-2xl overflow-hidden bg-foreground ` +
         className
       }
-      onClick={handleClick}
+      onClick={(e) => handleClick(e)}
       onHoverStart={() => !clicked && setHovered(true)}
       onHoverEnd={() => !clicked && setHovered(false)}
     >
       <motion.div
         style={{ height: "100%" }}
-        className={`absolute top-0 left-0 flex justify-end items-center ${
-          small ? "pr-1" : "pr-2"
-        }`}
+        className={`absolute top-0 left-0 flex justify-end items-center ${small ? "pr-1" : "pr-2"
+          }`}
         initial="initial"
         animate={clicked || hovered ? "animate" : "initial"}
         variants={variants}

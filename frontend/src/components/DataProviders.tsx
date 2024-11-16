@@ -1,7 +1,7 @@
-import { createContext } from 'react';
+import { createContext, useState } from 'react';
 import exampleProjects from '../examples/projects.json';
 
-interface Project {
+export interface Project {
     title: string;
     description: string;
     link: string;
@@ -17,6 +17,7 @@ interface AppDataContext {
     // isLoggedIn: boolean;
     projects: Project[];
     selectedProject?: Project;
+    setSelectedProject?: (project: Project) => void;
 }
 
 // Create the data context
@@ -30,8 +31,14 @@ const appData: AppDataContext = {
 
 // Provider component to wrap your app and provide the data context
 export const AppDataProvider = ({ children }: any) => {
+    const [selectedProject, setSelectedProject] = useState<Project | undefined>(undefined);
+
     return (
-        <AppDataContext.Provider value={appData}>
+        <AppDataContext.Provider value={{
+            ...appData,
+            selectedProject,
+            setSelectedProject
+        }}>
             {children}
         </AppDataContext.Provider>
     );

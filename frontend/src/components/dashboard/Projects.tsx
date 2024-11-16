@@ -1,19 +1,31 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import Button from "../Button";
 import bgImg from "@/../public/devcon.jpg";
+import { AppDataContext, Project } from "../DataProviders";
+import SubmissionModal from "../SubmissionModal";
+import ProjectListModal from "../ProjectListModal";
 
 const NoProject = () => {
+  const [isOpen, setOpen] = useState(false);
   return (
     <div className="w-full h-full flex flex-col">
       <div className="flex flex-col flex-1 items-center justify-center">
         <p className="px-3 text-sm">No project in progress!</p>
       </div>
-      <Button className="mt-auto">Submit project</Button>
+      <Button className="mt-auto" onClick={() => setOpen(true)}>Subcribe project</Button>
+      <ProjectListModal isOpen={isOpen} setOpen={setOpen} />
     </div>
   );
 };
 
-const CurrentProject = ({ currentProject }: { currentProject: any }) => {
+const CurrentProject = ({ currentProject }: { currentProject: Project }) => {
+  const appData = useContext(AppDataContext);
+  const [isOpen, setOpen] = useState(false);
+
+  const startSubmission = () => {
+    if (appData && appData.setSelectedProject) appData.setSelectedProject(currentProject);
+    setOpen(true);
+  }
   return (
     <div className="w-full h-full flex flex-col">
       <div className="flex flex-col border border-tertiary rounded-2xl gap-y-2 overflow-hidden pb-2">
@@ -24,41 +36,24 @@ const CurrentProject = ({ currentProject }: { currentProject: any }) => {
         />
         <h3 className="w-full px-3">{currentProject.title}</h3>
       </div>
-      <Button className="mt-auto">Submit project</Button>
+      <Button className="mt-auto" onClick={startSubmission}>Submit project</Button>
+      <SubmissionModal isOpen={isOpen} setOpen={setOpen} />
     </div>
   );
 };
 
 const Projects = () => {
-  const [currentProject, setCurrentProject] = useState<any | undefined>(
-    undefined
-  );
+  // const [currentProject, setCurrentProject] = useState<any | undefined>(
+  //   undefined
+  // );
+  const appData = useContext(AppDataContext);
 
-  // TODO: remove later
-  const handleClick = () => {
-    if (currentProject) setCurrentProject(undefined);
-    else
-      setCurrentProject({
-        id: 1,
-        title: "NFT Art Gallery",
-        description:
-          "Build an NFT marketplace where artists can mint and sell their digital artwork. Implement features like auctions, direct sales, and royalties.",
-        link: "https://example.com/nft-art-gallery",
-        image: "https://example.com/nft-art-gallery.jpg",
-        tags: ["Web3"],
-      });
-  };
 
   return (
     <div className="relative w-full h-full flex flex-col">
-      {/* // TODO: remove later */}
-      <button
-        className="absolute top-2 left-2 w-5 h-5 rounded-full bg-red-400"
-        onClick={handleClick}
-      />
       <h2>Projects</h2>
-      {currentProject ? (
-        <CurrentProject currentProject={currentProject} />
+      {appData?.selectedProject ? (
+        <CurrentProject currentProject={appData.selectedProject} />
       ) : (
         <NoProject />
       )}

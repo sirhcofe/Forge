@@ -11,6 +11,11 @@
   },
   "dependencies": {
     "@biconomy/account": "^4.5.7",
+    "@privy-io/react-auth": "^1.94.2",
+    "@pushprotocol/restapi": "^1.7.29",
+    "@radix-ui/react-dialog": "^1.1.2",
+    "@radix-ui/react-visually-hidden": "^1.1.0",
+    "@web3-react/core": "^8.2.3",
     "@web3auth/base": "^9.4.0",
     "@web3auth/ethereum-provider": "^9.4.0",
     "@web3auth/modal": "^9.4.0",
