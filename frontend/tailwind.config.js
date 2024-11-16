@@ -5,7 +5,7 @@ export default {
     extend: {
       colors: {
         // Define a specific color for 'accent'
-        background: "#CDCDCD",
+        background: { dark: "#2A3A3E", light: "#354A4F" },
         foreground: "#F8F8F8",
         primary: { dark: "#023047", light: "#8ECAE6" },
         accent: "#FB8500",

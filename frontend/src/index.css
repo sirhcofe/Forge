@@ -3,23 +3,30 @@
 @tailwind utilities;
 
 :root {
-	font-synthesis: none;
-	text-rendering: optimizeLegibility;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-	font-family: "Roboto Mono", monospace;
+  font-family: "Roboto Mono", monospace;
+}
+
+h1 {
+  font-weight: 700;
+  font-size: 96px;
+  color: "#023047";
+  letter-spacing: 0.2rem;
 }
 
 h2 {
-	font-weight: 600;
-	font-size: 24px;
-	color: "#023047"
+  font-weight: 600;
+  font-size: 24px;
+  color: "#023047";
 }
 
 h3 {
-	font-weight: 500;
-	font-size: 16px
+  font-weight: 500;
+  font-size: 16px;
 }

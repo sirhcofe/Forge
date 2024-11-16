@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@pushprotocol/restapi": "^1.7.29",
+    "@pushprotocol/socket": "^0.5.3",
+    "dotenv": "^16.4.5",
+    "ethers": "^5.7.2"
+  }
+}
