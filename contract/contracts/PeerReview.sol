@@ -86,6 +86,7 @@ contract PeerReview is AccessControl {
 
   function createUser(string memory username) external {
     require(userProfiles[msg.sender].created == false, "User already exists");
+
     userProfiles[msg.sender] = User({
       owner:msg.sender,
       username: username,
@@ -94,6 +95,8 @@ contract PeerReview is AccessControl {
       completedProjects: new uint256[](0),
       created: true
     });
+
+    _userArray.push(msg.sender);
     emit createUserEvent(msg.sender,username, 0, 0, new uint256[](0), true);
   }
 
