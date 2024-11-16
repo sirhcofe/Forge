@@ -7,6 +7,19 @@ import {ISP} from "@ethsign/sign-protocol-evm/src/interfaces/ISP.sol";
 import {Attestation} from "@ethsign/sign-protocol-evm/src/models/Attestation.sol";
 import {DataLocation} from "@ethsign/sign-protocol-evm/src/models/DataLocation.sol";
 
+struct Attestation {
+    uint64 schemaId;
+    uint64 linkedAttestationId;
+    uint64 attestTimestamp;
+    uint64 revokeTimestamp;
+    address attester;
+    uint64 validUntil;
+    DataLocation dataLocation;
+    bool revoked;
+    bytes[] recipients;
+    bytes data;
+}
+
 contract PeerReview is AccessControl {
   bytes public constant EVALUATOR_ROLE = keccak256("EVALUATOR");
   bytes public constant EVALUATEE_ROLE = keccak256("EVALUATEE");
@@ -19,7 +32,8 @@ contract PeerReview is AccessControl {
 
   constructor(uint64 schemaId) {
     _schemaId = schemaId;
-    _grantRole(msg.sender);
+    _grantRole(OWNER_ROLE, msg.sender);
+    _grantRole(ADMIN_ROLE, msg.sender);
   }
 
   function setSPInstance(address instance) external hasRole(OWNER_ROLE) {
@@ -60,6 +74,8 @@ contract PeerReview is AccessControl {
     require(msg.sender == evaluatorOf(evaluatee));
     
   }
+
+  function 
 
 }
 
