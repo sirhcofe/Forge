@@ -4,7 +4,7 @@ import bgImg from "@/../public/devcon.jpg";
 
 const NoProject = () => {
   return (
-    <div className="w-full h-full py-5 flex flex-col">
+    <div className="w-full h-full flex flex-col">
       <div className="flex flex-col flex-1 items-center justify-center">
         <p className="px-3 text-sm">No project in progress!</p>
       </div>
@@ -15,15 +15,14 @@ const NoProject = () => {
 
 const CurrentProject = ({ currentProject }: { currentProject: any }) => {
   return (
-    <div className="w-full h-full py-5 flex flex-col">
+    <div className="w-full h-full flex flex-col">
       <div className="flex flex-col border border-tertiary rounded-2xl gap-y-2 overflow-hidden pb-2">
         <img
           src={bgImg}
           alt="project-img"
-          className="w-full h-32 object-cover"
+          className="w-full h-14 object-cover"
         />
         <h3 className="w-full px-3">{currentProject.title}</h3>
-        <p className="px-3 text-sm">Click for more detail</p>
       </div>
       <Button className="mt-auto">Submit project</Button>
     </div>
