@@ -3,7 +3,10 @@ pragma solidity ^0.8.0;
 //NOTE: schemaId=0x55
 //NOTE: onchain_evm_534351_0x55
 
+//NOTE: onchain_evm_534351_0x6a this is for the evaluation timeslot
+
 import '@openzeppelin/contracts/access/AccessControl.sol';
+
 
 import { ISP } from '@ethsign/sign-protocol-evm/src/interfaces/ISP.sol';
 import { Attestation } from '@ethsign/sign-protocol-evm/src/models/Attestation.sol';
@@ -32,6 +35,9 @@ contract PeerReview is AccessControl {
   bytes32 public constant EVALUATEE_ROLE = keccak256('EVALUATEE');
   bytes32 public constant ADMIN_ROLE = keccak256('ADMIN');
   bytes32 public constant OWNER_ROLE = keccak256('OWNER');
+  uint64 private _evaluatorSchemaId; // You'll need to set this in constructor
+
+  mapping(address => mapping(address => uint256)) public evaluatorAttestationIds;
   mapping(uint256 => Project) public projects;
   uint256 private _projectMappingNumber;
   ISP public spInstance;
@@ -72,8 +78,9 @@ contract PeerReview is AccessControl {
     string evaluationFeedback;
   }
 
-  constructor(uint64 schemaId) {
+  constructor(uint64 schemaId, uint64 evalSchemaId) {
     _evaluationSchemaId = schemaId;
+    _evaluatorSchemaId = evalSchemaId;
     _projectMappingNumber = 0;
     _grantRole(OWNER_ROLE, msg.sender);
     _grantRole(ADMIN_ROLE, msg.sender);
@@ -150,6 +157,10 @@ contract PeerReview is AccessControl {
     _evaluationSchemaId = schemaId_;
   }
 
+  function setEvalSchemaID(uint64 schemaId_) external useRole(OWNER_ROLE) {
+    _evaluatorSchemaId = schemaId_;
+  }
+
   function setAdmin(address account) external useRole(OWNER_ROLE) {
     grantRole(ADMIN_ROLE, account);
     // emit AdminAdded(account);
@@ -172,10 +183,37 @@ contract PeerReview is AccessControl {
     // emit AdminAdded(account);
   }
 
+  // function setEvaluator(address evaluator, address evaluatee) internal {
+  //   // grantRole(EVALUATOR_ROLE, evaluator);
+  //   // grantRole(EVALUATEE_ROLE, evaluatee);
+  //   evaluatorOf[evaluatee].push(evaluator);
+  // }
+
   function setEvaluator(address evaluator, address evaluatee) internal {
-    // grantRole(EVALUATOR_ROLE, evaluator);
-    // grantRole(EVALUATEE_ROLE, evaluatee);
-    evaluatorOf[evaluatee].push(evaluator);
+    // Create recipients array for the attestation
+    bytes[] memory recipients = new bytes[](1);
+    recipients[0] = abi.encode(evaluatee);
+
+    // Encode the evaluator-evaluatee relationship data
+    bytes memory encodedData = abi.encode(evaluator, evaluatee);
+
+    // Create attestation with 1 week validity
+    Attestation memory attestation = Attestation({
+        schemaId: _evaluatorSchemaId,
+        linkedAttestationId: 0,
+        attestTimestamp: 0, // SignProtocol will set this
+        revokeTimestamp: 0,
+        attester: msg.sender,
+        validUntil: uint64(block.timestamp + 1 weeks),
+        dataLocation: DataLocation.ONCHAIN,
+        revoked: false,
+        recipients: recipients,
+        data: encodedData
+    });
+
+    // Submit the attestation
+    uint256 attestationId = spInstance.attest(attestation, "", "", "");
+    evaluatorAttestationIds[evaluator][evaluatee] = attestationId;
   }
 
   function getEvaluators(address evaluatee) external view returns ( address[] memory) {
@@ -260,10 +298,21 @@ contract PeerReview is AccessControl {
   function submitEvaluation (
     Evaluations memory evaluationData
   ) external returns(uint) {
-    require(
-      isEvaluator(evaluationData.evaluatee, msg.sender),
-      'This user not authorized to evaluate the evaluatee.'
-    );
+    // require(
+    //   isEvaluator(evaluationData.evaluatee, msg.sender),
+    //   'This user not authorized to evaluate the evaluatee.'
+    // );
+    // Get the attestation ID for this evaluator-evaluatee pair
+    uint256 evalAttestationId = evaluatorAttestationIds[msg.sender][evaluationData.evaluatee];
+    require(evalAttestationId != 0, "No evaluator attestation found");
+    
+    // Get the attestation from SignProtocol
+    Attestation memory att = spInstance.getAttestation(evalAttestationId);
+    
+    // Check if attestation is valid
+    require(!att.revoked && att.validUntil > block.timestamp, 
+        "This user not authorized to evaluate the evaluatee."); 
+
     uint projectId = evaluationData.projectId;
     bytes[] memory recipients = new bytes[](1);
     recipients[0] = abi.encode(evaluationData.evaluatee);
