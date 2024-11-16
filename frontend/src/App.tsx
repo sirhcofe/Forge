@@ -5,8 +5,12 @@ import { useWeb3Auth } from "./hooks/useWeb3Auth";
 import { AnimatePresence } from "framer-motion";
 
 function App() {
-  const { isLoading, user, logout } = useWeb3Auth();
+  const { isLoading, user } = useWeb3Auth();
   const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    console.log(user);
+  }, [user]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -25,12 +29,9 @@ function App() {
         ) : (
           <Landing key="Landing" ready={ready} user={user} />
         )}
-        {user && <button className="absolute top-0 right-0" onClick={logout}>logout</button>}
       </AnimatePresence>
     </div>
-
-  )
+  );
 }
-
 
 export default App;
