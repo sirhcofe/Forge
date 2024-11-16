@@ -7,6 +7,8 @@ import {ISP} from "@ethsign/sign-protocol-evm/src/interfaces/ISP.sol";
 import {Attestation} from "@ethsign/sign-protocol-evm/src/models/Attestation.sol";
 import {DataLocation} from "@ethsign/sign-protocol-evm/src/models/DataLocation.sol";
 
+event createEvaluatorOfEvent(address user, address[] evaluators);
+
 struct Attestation {
     uint64 schemaId;
     uint64 linkedAttestationId;
@@ -51,7 +53,8 @@ contract PeerReview is AccessControl {
   private uint64 _evaluationSchemaId;
   mapping (address => User) public userProfiles;
 
-  mapping (address => address) public evaluatorOf;
+  // mapping (address => address) public evaluatorOf;
+  mapping (address => address[]) public evaluatorOf;
 
   constructor(uint64 schemaId) {
     _evaluationSchemaId= schemaId;
@@ -96,15 +99,52 @@ contract PeerReview is AccessControl {
     revokeRole(EVALUATEE_ROLE, evaluatee);
   }
 
+  function randomNumberGenerator(uint max) private returns (uint) {
+      return uint(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender)))) % max;
+  }
+
   //TODO: Function to set the evaluation, random matching
-  function matchmaking() {}
+  function matchmaking(address evaluatee) {
+    address[] memory higher_level;
+    address[] memory equivalent_level;
+    address[] memory lower_level;
+    for (uint i = 0; i < _userArray.length; i++) {
+      if (_userArray[i] != msg.sender) {
+        uint evaluator_points = userProfiles[_userArray[i]].points;
+        uint range = userProfiles[msg.sender].points * 10 / 100;
+        if (evaluator_points > userProfiles[msg.sender].points + range)
+          higher_level.push(_userArray[i]);
+        else if (evaluator_points < userProfiles[msg.sender].points - range)
+          lower_level.push(_userArray[i]);
+        else
+          equivalent_level.push(_userArray[i]);
+      }
+    }
+    if (higher_level.length > 0) {
+        uint randomIndex = randomNumberGenerator(higher_level.length);
+        evaluatorOf[msg.sender].push(higher_level[randomIndex]);
+    }
+
+    if (equivalent_level.length > 0) {
+        uint randomIndex = randomNumberGenerator(equivalent_level.length);
+        evaluatorOf[msg.sender].push(equivalent_level[randomIndex]);
+    }
+
+    if (lower_level.length > 0) {
+        uint randomIndex = randomNumberGenerator(lower_level.length);
+        evaluatorOf[msg.sender].push(lower_level[randomIndex]);
+    }
+
+    emit createEvaluatorOfEvent(msg.sender, evaluatorOf[msg.sender])
+
+
+
+  }
 
   function submitEvaluation(address evaluatee) external hasRole(EVALUATOR_ROLE) {
     require(msg.sender == evaluatorOf(evaluatee));
     
   }
-
-  function 
 
 }
 
