@@ -140,6 +140,17 @@ contract PeerReview is AccessControl {
     // emit AdminAdded(account);
   }
 
+  function setEvaluator(address account) external useRole(ADMIN_ROLE) {
+    grantRole(EVALUATOR_ROLE, account);
+    // emit AdminAdded(account);
+  }
+
+  function setEvaluatee(address account) external useRole(ADMIN_ROLE) {
+    grantRole(EVALUATEE_ROLE, account);
+    // emit AdminAdded(account);
+  }
+
+
   function transferOwnership(address account) external useRole(OWNER_ROLE) {
     grantRole(OWNER_ROLE, account);
     revokeRole(OWNER_ROLE, msg.sender);
@@ -151,6 +162,16 @@ contract PeerReview is AccessControl {
     grantRole(EVALUATEE_ROLE, evaluatee);
     evaluatorOf[evaluatee].push(evaluator);
   }
+
+  function isEvaluator(address evaluatee, address evaluator) internal view returns (bool) {
+    address[] memory evaluators = evaluatorOf[evaluatee];
+    for (uint256 i = 0; i < evaluators.length; i++) {
+        if (evaluators[i] == evaluator) {
+            return true;
+        }
+    }
+    return false;
+}
 
   function removeEvaluator(address evaluatee) private {
     address[] storage evaluators = evaluatorOf[msg.sender]; // Get the array of evaluators for the sender
@@ -220,7 +241,7 @@ contract PeerReview is AccessControl {
     Evaluations memory evaluationData
   ) external useRole(EVALUATOR_ROLE) returns(uint) {
     require(
-      msg.sender == evaluationData.evaluatee,
+      isEvaluator(evaluationData.evaluatee, msg.sender),
       'This user not authorized to evaluate the evaluatee.'
     );
     uint projectId = evaluationData.projectId;
