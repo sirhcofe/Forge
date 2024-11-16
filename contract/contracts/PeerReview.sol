@@ -20,20 +20,48 @@ struct Attestation {
     bytes data;
 }
 
+struct User {
+  string username;
+  uint256 points;
+}
+
+struct Project {
+  string name;
+  string description;
+}
+
+struct Evaluations {
+  uint256 projectId;
+  uint256 score;
+  uint256 evaluationNumber;
+  address evaluatee;
+  string evaluationFeedback;
+}
+
 contract PeerReview is AccessControl {
   bytes public constant EVALUATOR_ROLE = keccak256("EVALUATOR");
   bytes public constant EVALUATEE_ROLE = keccak256("EVALUATEE");
   bytes public constant ADMIN_ROLE = keccak256("ADMIN");
   bytes public constant OWNER_ROLE = keccak256("OWNER");
-  private uint64 _schemaId;
 
-  mapping (address => uint256) public userPoints;
+  mapping (uint256 => Project) public projects;
+  private uint256 _projectMappingNumber;
+
+  private address[] _userArray;
+  private uint64 _evaluationSchemaId;
+  mapping (address => User) public userProfiles;
+
   mapping (address => address) public evaluatorOf;
 
   constructor(uint64 schemaId) {
-    _schemaId = schemaId;
+    _evaluationSchemaId= schemaId;
+    _projectMappingNumber = 0;
     _grantRole(OWNER_ROLE, msg.sender);
     _grantRole(ADMIN_ROLE, msg.sender);
+  }
+
+  function createNewProject(string name, string description) {
+    
   }
 
   function setSPInstance(address instance) external hasRole(OWNER_ROLE) {
@@ -69,6 +97,7 @@ contract PeerReview is AccessControl {
   }
 
   //TODO: Function to set the evaluation, random matching
+  function matchmaking() {}
 
   function submitEvaluation(address evaluatee) external hasRole(EVALUATOR_ROLE) {
     require(msg.sender == evaluatorOf(evaluatee));
