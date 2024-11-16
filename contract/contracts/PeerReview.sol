@@ -104,6 +104,17 @@ contract PeerReview is AccessControl {
     userProfiles[userAddress].points += amount;
   }
 
+  function hasCompletedProject(address userAddress, uint256 projectId) external view returns (bool) {
+    require(userProfiles[userAddress].created == true, "User does not exists");
+    uint256[] memory completedProjects = userProfiles[userAddress].completedProjects;
+    for (uint256 i = 0; i < completedProjects.length; i++) {
+      if (completedProjects[i] == projectId) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   function completeProject(address userAddress, uint256 projectId, uint256 amount, bool pass) external useRole(ADMIN_ROLE) {
     require(userProfiles[userAddress].created == true, "User does not exists");
     require(userProfiles[userAddress].currentProject == projectId, "Project has not started by this user");
@@ -266,55 +277,6 @@ contract PeerReview is AccessControl {
     return attestationId;
   }
 }
-
-// function confirmTaskCompletion(
-//     uint256 taskId,
-//     address employeeAddress,
-//     uint256 projectId,
-//     bool completed,
-//     uint256 storypoints
-// ) external onlyManager returns (uint64) {
-//     Task memory task = taskList[taskId];
-//     if (task.assignee == employeeAddress) {
-//         if (task.finished) {
-//             bytes[] memory recipient = new bytes[](1);
-//             recipient[0] = abi.encode(employeeAddress);
-//
-//             // TODO: Change this to parameter
-//             bytes memory data = abi.encode(
-//                 projectId,
-//                 taskId,
-//                 completed,
-//                 storypoints
-//             );
-//
-//             Attestation memory a = Attestation({
-//                 schemaId: schemaId,
-//                 linkedAttestationId: 0,
-//                 attestTimestamp: 0,
-//                 revokeTimestamp: 0,
-//                 attester: address(this),
-//                 validUntil: 0,
-//                 dataLocation: DataLocation.ONCHAIN,
-//                 revoked: false,
-//                 recipients: recipient,
-//                 data: data
-//             });
-//             uint64 attestationId = spInstance.attest(a, "", "", "");
-//             emit TaskCompleted(
-//                 taskId,
-//                 employeeAddress,
-//                 _msgSender(),
-//                 attestationId
-//             );
-//             return attestationId;
-//         } else {
-//             revert TaskNotMarkedCompletedYet();
-//         }
-//     } else {
-//         revert TaskAssigneeAddressMismatch();
-//     }
-// }
 
 //EVENTS
 //create user
