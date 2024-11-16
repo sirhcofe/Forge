@@ -28,6 +28,9 @@ event createEvaluatorOfEvent(address user, address[] evaluators);
 struct User {
   string username;
   uint256 points;
+  uint256 currentProject;
+  uint256[] completedProjects;
+  bool created;
 }
 
 struct Project {
@@ -69,6 +72,17 @@ contract PeerReview is AccessControl {
   modifier useRole(bytes32 role) {
     require (hasRole(role ,msg.sender));
     _;
+  }
+
+  function createUser(string memory username) external {
+    require(userProfiles[msg.sender].created == false, "User already exists");
+    userProfiles[msg.sender] = User({
+      username: username,
+      points: 0,
+      currentProject: 0,
+      completedProjects: new uint256[](0),
+      created: true
+    });
   }
 
   function createNewProject(string calldata name, string calldata description) external useRole(OWNER_ROLE) {
@@ -120,6 +134,12 @@ contract PeerReview is AccessControl {
 
   function randomNumberGenerator(uint max) private returns (uint) {
       return uint(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender))) % max;
+  }
+
+  function startProject(uint256 projectId) external {
+    require(projectId > 0 && projectId <= _projectMappingNumber, "Project does not exist");
+    require(userProfiles[msg.sender].created == true, "User does not exist"); 
+    
   }
 
   //TODO: Function to set the evaluation, random matching
@@ -181,6 +201,10 @@ contract PeerReview is AccessControl {
       recipients: recipients,
       data: encodedEvaluationData
     });
+    uint256 attestationId = spInstance.attest(attestation, "", "", "");
+    // TODO: create event for this
+    // emit event for attestation
+    return attestationId;
   }
 }
 
