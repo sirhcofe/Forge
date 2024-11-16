@@ -5,8 +5,8 @@ type User @entity {
   points:BigInt!
   currentProject:BigInt!
   completedProject:[BigInt]!
-  evaluated:[Evaluation]! @derivedFrom(field:user)
-  evaluation:[Evaluation]! @derivedFrom(field:evaluatee)
+  evaluated:[Evaluation]! @derivedFrom(field:evaluatee)
+  evaluation:[Evaluation]! @derivedFrom(field:user)
   blockTimestamp: BigInt!
 }
 
@@ -17,5 +17,6 @@ type Evaluation @entity {
   evaluationFeedback:String!
   projectId:BigInt!
   evaluatee:String!
+  blockTimeStamp: BigInt!
 }
 
