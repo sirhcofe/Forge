@@ -48,7 +48,7 @@ contract PeerReview is AccessControl {
   event createUserEvent(string username, uint points, uint currentProject, uint[] completedProjects, bool created);
   event createEvaluatorOfEvent(address user, uint projectId, address[] evaluators);
   event completeProjectEvent(address user, uint projectId, uint amount);
-  event submitAttestationEvent(address evaluatee, uint projectId, uint score, string evaluationFeedback);
+  event submitAttestationEvent(address evaluator, address evaluatee, uint projectId, uint score, string evaluationFeedback);
 
 
   struct User {
@@ -241,7 +241,7 @@ contract PeerReview is AccessControl {
       data: encodedEvaluationData
     });
     uint256 attestationId = spInstance.attest(attestation, "", "", "");
-    emit submitAttestationEvent(evaluationData.evaluatee, projectId, evaluationData.score, evaluationData.evaluationFeedback);
+    emit submitAttestationEvent(msg.sender, evaluationData.evaluatee, projectId, evaluationData.score, evaluationData.evaluationFeedback);
     return attestationId;
   }
 }
