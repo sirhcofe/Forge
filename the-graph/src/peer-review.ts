@@ -1,86 +1,63 @@
 import { BigInt } from "@graphprotocol/graph-ts"
 import {
-  PeerReview,
-  RoleAdminChanged,
-  RoleGranted,
-  RoleRevoked,
+  PeerReview, 
   completeProjectEvent,
   createEvaluatorOfEvent,
   createUserEvent,
   failProjectEvent,
   submitAttestationEvent
 } from "../generated/PeerReview/PeerReview"
-import { ExampleEntity } from "../generated/schema"
+import { User, Evaluation } from "../generated/schema"
 
-export function handleRoleAdminChanged(event: RoleAdminChanged): void {
-  // Entities can be loaded from the store using a string ID; this ID
-  // needs to be unique across all entities of the same type
-  let entity = ExampleEntity.load(event.transaction.from)
-
-  // Entities only exist after they have been saved to the store;
-  // `null` checks allow to create entities on demand
-  if (!entity) {
-    entity = new ExampleEntity(event.transaction.from)
-
-    // Entity fields can be set using simple assignments
-    entity.count = BigInt.fromI32(0)
-  }
-
-  // BigInt and BigDecimal math are supported
-  entity.count = entity.count + BigInt.fromI32(1)
-
-  // Entity fields can be set based on event parameters
-  entity.role = event.params.role
-  entity.previousAdminRole = event.params.previousAdminRole
-
-  // Entities can be written to the store with `.save()`
+export function handlecompleteProjectEvent(event: completeProjectEvent): void {
+  let entity = User.load(event.params.user)!;
+  entity.completedProject.push(event.params.projectId)
+  entity.currentProject =  BigInt.fromI32(0);
+  entity.evaluation = []
+  entity.points = entity.points + event.params.amount
   entity.save()
-
-  // Note: If a handler doesn't require existing field values, it is faster
-  // _not_ to load the entity from the store. Instead, create it fresh with
-  // `new Entity(...)`, set the fields that should be updated and save the
-  // entity back to the store. Fields that were not set or unset remain
-  // unchanged, allowing for partial updates to be applied.
-
-  // It is also possible to access smart contracts from mappings. For
-  // example, the contract that has emitted the event can be connected to
-  // with:
-  //
-  // let contract = Contract.bind(event.address)
-  //
-  // The following functions can then be called on this contract to access
-  // state variables and other data:
-  //
-  // - contract.ADMIN_ROLE(...)
-  // - contract.DEFAULT_ADMIN_ROLE(...)
-  // - contract.EVALUATEE_ROLE(...)
-  // - contract.EVALUATOR_ROLE(...)
-  // - contract.OWNER_ROLE(...)
-  // - contract.checkProjectExists(...)
-  // - contract.evaluatorOf(...)
-  // - contract.getRoleAdmin(...)
-  // - contract.hasRole(...)
-  // - contract.projects(...)
-  // - contract.spInstance(...)
-  // - contract.submitEvaluation(...)
-  // - contract.supportsInterface(...)
-  // - contract.userProfiles(...)
 }
-
-export function handleRoleGranted(event: RoleGranted): void {}
-
-export function handleRoleRevoked(event: RoleRevoked): void {}
-
-export function handlecompleteProjectEvent(event: completeProjectEvent): void {}
 
 export function handlecreateEvaluatorOfEvent(
   event: createEvaluatorOfEvent
-): void {}
+): void {
+  for (let i = 0; i < event.params.evaluators.length; i++) {
+    let entity = new Evaluation(event.params.user.concat(event.params.evaluators[i]))
+    let evaluatee = User.load(event.params.user)!
+    let evaluator = User.load(event.params.evaluators[i])!
+    entity.evaluatee = evaluatee.id
+    entity.evaluator = evaluator.id
+    entity.projectId = event.params.projectId 
+    entity.save()
+  }
+}
 
-export function handlecreateUserEvent(event: createUserEvent): void {}
+export function handlecreateUserEvent(event: createUserEvent): void {
+  let entity = User.load(event.params.owner)
+  if (entity == null)
+    entity = new User(
+      event.params.owner)
+  
+  entity.username = event.params.username;
+  entity.points = event.params.points;
+  entity.currentProject = event.params.currentProject;
+  entity.completedProject = [];
+  entity.blockTimestamp = event.block.timestamp
+  entity.save()
+}
 
-export function handlefailProjectEvent(event: failProjectEvent): void {}
+export function handlefailProjectEvent(event: failProjectEvent): void {
+  let entity = User.load(event.params.userAddress)!
+  entity.currentProject = BigInt.fromI32(0);
+  entity.evaluation = []
+  entity.save()
+}
 
 export function handlesubmitAttestationEvent(
   event: submitAttestationEvent
-): void {}
+): void {
+  let entity = Evaluation.load(event.params.evaluator.concat(event.params.evaluatee))!
+  entity.score = event.params.score;
+  entity.blockTimeStamp = event.block.timestamp; 
+  entity.save()
+}
