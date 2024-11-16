@@ -39,7 +39,7 @@ const ProjectsHistory = () => {
         <div className="flex flex-col gap-y-2 pt-2">
           {projectHistory.map((history: ProjectHistoryType, index: number) => {
             return (
-              <div className="w-full h-full flex flex-col">
+              <div className="w-full h-full flex flex-col" key={index}>
                 <div className="relative flex flex-1 flex-col border border-tertiary rounded-2xl gap-y-1 overflow-hidden pb-2">
                   <img
                     src={bgImg}

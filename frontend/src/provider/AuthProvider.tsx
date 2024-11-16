@@ -9,6 +9,7 @@ import {
 } from "@web3auth/base";
 import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
 import { Web3AuthNoModal } from "@web3auth/no-modal";
+import { Web3Auth } from "@web3auth/modal";
 import { createContext, useEffect, useState } from "react";
 import RPC from "@/utils/ethersRPC";
 import toast from "react-hot-toast";
@@ -29,6 +30,8 @@ import {
 import { ethers } from "ethers";
 
 export const Web3AuthContext = createContext<Web3AuthContextType | null>(null);
+
+const clientId = import.meta.env.VITE_WEB3AUTH_CLIENT_ID;
 
 const biconomyConfig = {
   biconomyPaymasterApiKey: import.meta.env.VITE_BICONOMY_PAYMASTER_API_KEY,
@@ -68,11 +71,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           config: { chainConfig },
         });
 
-        const web3AuthInstance = new Web3AuthNoModal({
+        const web3AuthOptions = {
           clientId: import.meta.env.VITE_WEB3AUTH_CLIENT_ID || "",
           web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
           privateKeyProvider,
-        });
+        }
+
+        const web3AuthInstance = new Web3AuthNoModal(web3AuthOptions);
+        // const web3AuthInstance = new Web3Auth(web3AuthOptions);
 
         const web3AuthAdapter = new AuthAdapter({
           adapterSettings: {
@@ -86,6 +92,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             },
           },
         });
+        // const web3AuthAdapter = new AuthAdapter({
+        //   adapterSettings: {
+        //     loginConfig: {
+        //       // Email Passwordless login
+        //       email_passwordless: {
+        //         verifier: "w3a-email-passwordless-demo", // Pass your verifier name here
+        //         typeOfLogin: "email_passwordless",
+        //         clientId, // Pass the Web3Auth `Client ID` here.
+        //       },
+        //     },
+        //   },
+        // });
         web3AuthInstance.configureAdapter(web3AuthAdapter);
         setWeb3Auth(web3AuthInstance);
 
@@ -119,6 +137,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           connection: "worldcoin",
         },
       });
+      // const web3AuthProvider = await web3Auth.connectTo(
+      //   WALLET_ADAPTERS.AUTH, {
+      //   loginProvider: "email_passwordless",
+      //   extraLoginOptions: { login_hint: "hint" },
+      // }
+      // );
       setWeb3AuthProvider(web3AuthProvider);
       postLoginFlow(web3AuthProvider);
     } else {
