@@ -76,7 +76,8 @@ const Landing = ({ ready, user }: { ready: boolean; user: any }) => {
               exit={{
                 opacity: 0,
                 scale: 0.5,
-                transition: { delay: delay },
+                transformOrigin: "top center",
+                transition: { delay: delay, ease: "easeIn" },
               }}
               key={index}
             />

@@ -81,7 +81,7 @@ const Evaluations = () => {
         className="absolute top-2 left-2 w-5 h-5 rounded-full bg-red-400"
         onClick={handleClick}
       />
-      <h2>Projects</h2>
+      <h2>Evaluations</h2>
       {currentEval ? <CurrentEval currentEval={currentEval} /> : <NoEval />}
     </div>
   );
