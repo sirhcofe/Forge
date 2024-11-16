@@ -6,6 +6,8 @@ import {
   RoleRevoked,
   completeProjectEvent,
   createEvaluatorOfEvent,
+  createUserEvent,
+  failProjectEvent,
   submitAttestationEvent
 } from "../generated/PeerReview/PeerReview"
 
@@ -136,6 +138,66 @@ export function createcreateEvaluatorOfEventEvent(
   )
 
   return createEvaluatorOfEventEvent
+}
+
+export function createcreateUserEventEvent(
+  username: string,
+  points: BigInt,
+  currentProject: BigInt,
+  completedProjects: Array<BigInt>,
+  created: boolean
+): createUserEvent {
+  let createUserEventEvent = changetype<createUserEvent>(newMockEvent())
+
+  createUserEventEvent.parameters = new Array()
+
+  createUserEventEvent.parameters.push(
+    new ethereum.EventParam("username", ethereum.Value.fromString(username))
+  )
+  createUserEventEvent.parameters.push(
+    new ethereum.EventParam("points", ethereum.Value.fromUnsignedBigInt(points))
+  )
+  createUserEventEvent.parameters.push(
+    new ethereum.EventParam(
+      "currentProject",
+      ethereum.Value.fromUnsignedBigInt(currentProject)
+    )
+  )
+  createUserEventEvent.parameters.push(
+    new ethereum.EventParam(
+      "completedProjects",
+      ethereum.Value.fromUnsignedBigIntArray(completedProjects)
+    )
+  )
+  createUserEventEvent.parameters.push(
+    new ethereum.EventParam("created", ethereum.Value.fromBoolean(created))
+  )
+
+  return createUserEventEvent
+}
+
+export function createfailProjectEventEvent(
+  userAddress: Address,
+  projectId: BigInt
+): failProjectEvent {
+  let failProjectEventEvent = changetype<failProjectEvent>(newMockEvent())
+
+  failProjectEventEvent.parameters = new Array()
+
+  failProjectEventEvent.parameters.push(
+    new ethereum.EventParam(
+      "userAddress",
+      ethereum.Value.fromAddress(userAddress)
+    )
+  )
+  failProjectEventEvent.parameters.push(
+    new ethereum.EventParam(
+      "projectId",
+      ethereum.Value.fromUnsignedBigInt(projectId)
+    )
+  )
+
+  return failProjectEventEvent
 }
 
 export function createsubmitAttestationEventEvent(

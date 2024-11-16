@@ -1,113 +1,86 @@
+import { BigInt } from "@graphprotocol/graph-ts"
 import {
-  RoleAdminChanged as RoleAdminChangedEvent,
-  RoleGranted as RoleGrantedEvent,
-  RoleRevoked as RoleRevokedEvent,
-  completeProjectEvent as completeProjectEventEvent,
-  createEvaluatorOfEvent as createEvaluatorOfEventEvent,
-  submitAttestationEvent as submitAttestationEventEvent
-} from "../generated/PeerReview/PeerReview"
-import {
+  PeerReview,
   RoleAdminChanged,
   RoleGranted,
   RoleRevoked,
   completeProjectEvent,
   createEvaluatorOfEvent,
+  createUserEvent,
+  failProjectEvent,
   submitAttestationEvent
-} from "../generated/schema"
+} from "../generated/PeerReview/PeerReview"
+import { ExampleEntity } from "../generated/schema"
 
-export function handleRoleAdminChanged(event: RoleAdminChangedEvent): void {
-  let entity = new RoleAdminChanged(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
+export function handleRoleAdminChanged(event: RoleAdminChanged): void {
+  // Entities can be loaded from the store using a string ID; this ID
+  // needs to be unique across all entities of the same type
+  let entity = ExampleEntity.load(event.transaction.from)
+
+  // Entities only exist after they have been saved to the store;
+  // `null` checks allow to create entities on demand
+  if (!entity) {
+    entity = new ExampleEntity(event.transaction.from)
+
+    // Entity fields can be set using simple assignments
+    entity.count = BigInt.fromI32(0)
+  }
+
+  // BigInt and BigDecimal math are supported
+  entity.count = entity.count + BigInt.fromI32(1)
+
+  // Entity fields can be set based on event parameters
   entity.role = event.params.role
   entity.previousAdminRole = event.params.previousAdminRole
-  entity.newAdminRole = event.params.newAdminRole
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
+  // Entities can be written to the store with `.save()`
   entity.save()
+
+  // Note: If a handler doesn't require existing field values, it is faster
+  // _not_ to load the entity from the store. Instead, create it fresh with
+  // `new Entity(...)`, set the fields that should be updated and save the
+  // entity back to the store. Fields that were not set or unset remain
+  // unchanged, allowing for partial updates to be applied.
+
+  // It is also possible to access smart contracts from mappings. For
+  // example, the contract that has emitted the event can be connected to
+  // with:
+  //
+  // let contract = Contract.bind(event.address)
+  //
+  // The following functions can then be called on this contract to access
+  // state variables and other data:
+  //
+  // - contract.ADMIN_ROLE(...)
+  // - contract.DEFAULT_ADMIN_ROLE(...)
+  // - contract.EVALUATEE_ROLE(...)
+  // - contract.EVALUATOR_ROLE(...)
+  // - contract.OWNER_ROLE(...)
+  // - contract.checkProjectExists(...)
+  // - contract.evaluatorOf(...)
+  // - contract.getRoleAdmin(...)
+  // - contract.hasRole(...)
+  // - contract.projects(...)
+  // - contract.spInstance(...)
+  // - contract.submitEvaluation(...)
+  // - contract.supportsInterface(...)
+  // - contract.userProfiles(...)
 }
 
-export function handleRoleGranted(event: RoleGrantedEvent): void {
-  let entity = new RoleGranted(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.role = event.params.role
-  entity.account = event.params.account
-  entity.sender = event.params.sender
+export function handleRoleGranted(event: RoleGranted): void {}
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
+export function handleRoleRevoked(event: RoleRevoked): void {}
 
-  entity.save()
-}
-
-export function handleRoleRevoked(event: RoleRevokedEvent): void {
-  let entity = new RoleRevoked(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.role = event.params.role
-  entity.account = event.params.account
-  entity.sender = event.params.sender
-
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
-}
-
-export function handlecompleteProjectEvent(
-  event: completeProjectEventEvent
-): void {
-  let entity = new completeProjectEvent(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.user = event.params.user
-  entity.projectId = event.params.projectId
-  entity.amount = event.params.amount
-
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
-}
+export function handlecompleteProjectEvent(event: completeProjectEvent): void {}
 
 export function handlecreateEvaluatorOfEvent(
-  event: createEvaluatorOfEventEvent
-): void {
-  let entity = new createEvaluatorOfEvent(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.user = event.params.user
-  entity.projectId = event.params.projectId
-  entity.evaluators = event.params.evaluators
+  event: createEvaluatorOfEvent
+): void {}
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
+export function handlecreateUserEvent(event: createUserEvent): void {}
 
-  entity.save()
-}
+export function handlefailProjectEvent(event: failProjectEvent): void {}
 
 export function handlesubmitAttestationEvent(
-  event: submitAttestationEventEvent
-): void {
-  let entity = new submitAttestationEvent(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.evaluatee = event.params.evaluatee
-  entity.projectId = event.params.projectId
-  entity.score = event.params.score
-  entity.evaluationFeedback = event.params.evaluationFeedback
-
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
-}
+  event: submitAttestationEvent
+): void {}

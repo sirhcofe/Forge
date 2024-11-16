@@ -8,25 +8,40 @@ dataSources:
     name: PeerReview
     network: scroll-sepolia
     source:
-      address: "0xD9D45F69d0223A48EbB6d0BE91cF0d8abD7dCa45"
+      address: "0x3B37B4dbE82a66812A8B0Fe9E9aaC1e02C120B37"
       abi: PeerReview
-      startBlock: 7302534
+      startBlock: 7303483
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
       language: wasm/assemblyscript
       entities:
+        - RoleAdminChanged
+        - RoleGranted
+        - RoleRevoked
         - completeProjectEvent
         - createEvaluatorOfEvent
+        - createUserEvent
+        - failProjectEvent
         - submitAttestationEvent
       abis:
         - name: PeerReview
           file: ./abis/PeerReview.json
       eventHandlers:
+        - event: RoleAdminChanged(indexed bytes32,indexed bytes32,indexed bytes32)
+          handler: handleRoleAdminChanged
+        - event: RoleGranted(indexed bytes32,indexed address,indexed address)
+          handler: handleRoleGranted
+        - event: RoleRevoked(indexed bytes32,indexed address,indexed address)
+          handler: handleRoleRevoked
         - event: completeProjectEvent(address,uint256,uint256)
           handler: handlecompleteProjectEvent
         - event: createEvaluatorOfEvent(address,uint256,address[])
           handler: handlecreateEvaluatorOfEvent
+        - event: createUserEvent(string,uint256,uint256,uint256[],bool)
+          handler: handlecreateUserEvent
+        - event: failProjectEvent(address,uint256)
+          handler: handlefailProjectEvent
         - event: submitAttestationEvent(address,uint256,uint256,string)
           handler: handlesubmitAttestationEvent
       file: ./src/peer-review.ts

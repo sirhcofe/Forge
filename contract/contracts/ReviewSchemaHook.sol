@@ -90,7 +90,7 @@ contract HookUtils is Ownable {
 }
 
 // @dev This contract implements the actual schema hook.
-contract PeerReviewHook is ISPHook, HookUtils {
+contract ReviewSchemaHook is ISPHook, HookUtils {
   constructor(address targetContractAddress) HookUtils(targetContractAddress) {
     // Initialize PeerReviewHook-specific state if needed
   }
