@@ -85,6 +85,22 @@ contract PeerReview is AccessControl {
     });
   }
 
+  function addUserPoints(address userAddress, uint256 amount) external useRole(ADMIN_ROLE) {
+    require(userProfiles[userAddress].created == true, "User does not exists");
+    userProfiles[userAddress].points += amount;
+  }
+
+  function completeProject(address userAddress, uint256 projectId, uint256 amount) external useRole(ADMIN_ROLE) {
+    require(userProfiles[userAddress].created == true, "User does not exists");
+    require(userProfiles[userAddress].currentProject == projectId, "Project has not started by this user");
+    
+    userProfiles[userAddress].points += amount;
+    userProfiles[userAddress].completedProjects.push(projectId);
+    userProfiles[userAddress].currentProject = 0;
+
+    // TODO: emit event??
+  }
+
   function createNewProject(string calldata name, string calldata description) external useRole(OWNER_ROLE) {
     _projectMappingNumber++;
     projects[_projectMappingNumber] = Project(name, description);
@@ -139,7 +155,8 @@ contract PeerReview is AccessControl {
   function startProject(uint256 projectId) external {
     require(projectId > 0 && projectId <= _projectMappingNumber, "Project does not exist");
     require(userProfiles[msg.sender].created == true, "User does not exist"); 
-    
+
+    userProfiles[msg.sender].currentProject = projectId;
   }
 
   //TODO: Function to set the evaluation, random matching
