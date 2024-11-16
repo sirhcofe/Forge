@@ -1,0 +1,52 @@
+[
+    {
+        "id": 1,
+        "title": "NFT Art Gallery",
+        "description": "Build an NFT marketplace where artists can mint and sell their digital artwork. Implement features like auctions, direct sales, and royalties.",
+        "link": "https://example.com/nft-art-gallery",
+        "image": "https://example.com/nft-art-gallery.jpg",
+        "tags": [
+            "Web3"
+        ]
+    },
+    {
+        "id": 2,
+        "title": "DeFi Dashboard",
+        "description": "Create a decentralized finance (DeFi) dashboard that aggregates and displays user's investments across various DeFi platforms.",
+        "link": "https://example.com/defi-dashboard",
+        "image": "https://example.com/defi-dashboard.jpg",
+        "tags": [
+            "Web3"
+        ]
+    },
+    {
+        "id": 3,
+        "title": "Decentralized Voting System",
+        "description": "Develop a smart contract for a secure, transparent voting system to be used in local elections or community decisions.",
+        "link": "https://example.com/decentralized-voting-system",
+        "image": "https://example.com/decentralized-voting-system.jpg",
+        "tags": [
+            "Web3"
+        ]
+    },
+    {
+        "id": 4,
+        "title": "Utility Token Launch",
+        "description": "Design and deploy a new ERC-20 token for a specific utility within a decentralized platform, followed by an initial coin offering (ICO).",
+        "link": "https://example.com/utility-token-launch",
+        "image": "https://example.com/utility-token-launch.jpg",
+        "tags": [
+            "Web3"
+        ]
+    },
+    {
+        "id": 5,
+        "title": "Custom Blockchain Explorer",
+        "description": "Develop a blockchain explorer tool to view transaction histories and balances of addresses for a specific blockchain, enhancing transparency.",
+        "link": "https://example.com/custom-blockchain-explorer",
+        "image": "https://example.com/custom-blockchain-explorer.jpg",
+        "tags": [
+            "Web3"
+        ]
+    }
+]
