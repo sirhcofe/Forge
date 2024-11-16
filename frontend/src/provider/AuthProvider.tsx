@@ -10,7 +10,16 @@ import {
 import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
 import { Web3AuthNoModal } from "@web3auth/no-modal";
 import { createContext, useEffect, useState } from "react";
+import RPC from "@/utils/ethersRPC";
 import toast from "react-hot-toast";
+import {
+  createPublicClient,
+  createWalletClient,
+  custom,
+  PublicClient,
+  WalletClient,
+} from "viem";
+import { scrollSepolia } from "viem/chains";
 
 export const Web3AuthContext = createContext<Web3AuthContextType | null>(null);
 
@@ -19,6 +28,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [web3AuthProvider, setWeb3AuthProvider] = useState<IProvider | null>(
     null
   );
+  const [viemPublicClient, setViemPublicClient] = useState<PublicClient>();
+  const [viemWalletClient, setViemWalletClient] = useState<WalletClient>();
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] =
@@ -55,7 +66,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             uxMode: UX_MODE.REDIRECT,
             loginConfig: {
               jwt: {
-                verifier: "Forge",
+                verifier: "peerflux",
                 typeOfLogin: "jwt",
                 clientId: import.meta.env.VITE_AUTH0_CLIENT_ID,
               },
@@ -130,7 +141,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
     const user = await getUserInfo();
-    setUser(user);
+    const address = await RPC.getAccounts(provider);
+    setUser({ ...user, address });
+
+    const pClient: any = createPublicClient({
+      chain: scrollSepolia,
+      transport: custom(web3AuthProvider!),
+    });
+    setViemPublicClient(pClient);
+    const wClient = createWalletClient({
+      chain: scrollSepolia,
+      transport: custom(web3AuthProvider!),
+    });
+    setViemWalletClient(wClient);
   };
 
   const logout = async () => {
@@ -153,6 +176,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         login,
         logout,
         authenticateUser,
+        viemPublicClient,
+        viemWalletClient,
       }}
     >
       {children}

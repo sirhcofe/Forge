@@ -9,6 +9,8 @@ export const useWeb3Auth = () => {
     login,
     logout,
     authenticateUser,
+    viemPublicClient,
+    viemWalletClient,
   } = useContext(Web3AuthContext) as Web3AuthContextType;
 
   return {
@@ -17,5 +19,7 @@ export const useWeb3Auth = () => {
     login,
     logout,
     authenticateUser,
+    viemPublicClient,
+    viemWalletClient,
   };
 };
