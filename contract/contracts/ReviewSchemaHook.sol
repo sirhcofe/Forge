@@ -48,20 +48,33 @@ contract HookUtils is Ownable {
     return score >= 100;
   }
 
-  function _checkProjectAttestations(address user) internal view returns (bool) {
-    UserAttestation[] storage attestations = userAttestation[user];
-    
-    for(uint i = 0; i < attestations.length; i++) {
-      if(attestations[i].score <= 100) {
-          return false;
+  function _checkProjectAttestations(
+    address user
+  ) internal view returns (bool) {
+    UserAttestation[] memory attestations = userAttestation[user];
+
+    for (uint i = 0; i < attestations.length; i++) {
+      if (attestations[i].score <= 100) {
+        return false;
       }
     }
-    
+
     return true;
   }
 
-  function addAttestationToUserList(UserAttestation memory attestation, address userAddress) internal {
-    userAttestation[userAddress].push(attestation);
+  function addAttestationToUserList(
+    address evaluator,
+    uint256 projectId,
+    uint256 amount,
+    address userAddress
+  ) internal {
+    userAttestation[userAddress].push(
+      UserAttestation({
+        evaluator: evaluator,
+        score: amount,
+        projectId: projectId
+      })
+    );
   }
 
   function completeProjectCall(
@@ -93,25 +106,21 @@ contract PeerReviewHook is ISPHook, HookUtils {
     Attestation memory attestation = ISP(msg.sender).getAttestation(
       attestationId
     );
-    (
-      uint256 _projectId,
-      uint256 score,
-      address evaluatee,
-      // string memory evaluationFeedback
-    ) = abi.decode(attestation.data, (uint64, uint64, address, string));
+    (uint256 _projectId, uint256 score, address evaluatee, ) = // string memory evaluationFeedback
+    abi.decode(attestation.data, (uint64, uint64, address, string));
 
-    addAttestationToUserList(UserAttestation({
-      evaluator: attestation.attester,
-      projectId: _projectId,
-      score: score
-    }), evaluatee);
-    
+    addAttestationToUserList(
+      attestation.attester,
+      _projectId,
+      score,
+      evaluatee
+    );
 
-    UserAttestation[] storage userAttestations = userAttestation[evaluatee];
+    UserAttestation[] memory userAttestations = userAttestation[evaluatee];
     if (userAttestations.length == 3) {
       bool passed = _checkProjectAttestations(evaluatee);
       completeProjectCall(evaluatee, _projectId, score, passed);
-      userAttestation[evaluatee] = new UserAttestation[](0);
+      delete userAttestation[evaluatee];
       // completeProjectCall(evaluatee, _projectId, score, _checkProjectAttestations(evaluatee));
     }
   }
