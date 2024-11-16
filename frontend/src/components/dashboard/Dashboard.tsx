@@ -7,10 +7,13 @@ import Updates from "./Updates";
 import Points from "./Points";
 import Projects from "./Projects";
 import ProjectsHistory from "./ProjectHistory";
+import { useWeb3Auth } from "@/hooks/useWeb3Auth";
+import { motion } from "framer-motion";
 
 const Dashboard = () => {
+  const { logout } = useWeb3Auth();
   return (
-    <div className="w-full min-h-screen max-h-screen bg-background-dark grid grid-cols-[repeat(11,minmax(0,1fr))] grid-rows-[repeat(10,minmax(0,1fr))] gap-3 p-4">
+    <motion.div className="w-full min-h-screen max-h-screen bg-background-dark grid grid-cols-[repeat(11,minmax(0,1fr))] grid-rows-[repeat(10,minmax(0,1fr))] gap-3 p-4">
       <Card
         className="row-span-4 col-span-3 h-full w-full"
         layout={<Updates />}
@@ -44,7 +47,11 @@ const Dashboard = () => {
         className="row-span-3 row-start-8 col-start-9 col-span-3 h-full w-full"
         layout={<Evaluations />}
       />
-    </div>
+      <button
+        className="absolute top-40 right-40 w-5 h-5 bg-blue-600 z-20"
+        onClick={logout}
+      ></button>
+    </motion.div>
   );
 };
 

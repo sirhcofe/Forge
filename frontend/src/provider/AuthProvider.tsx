@@ -109,6 +109,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [web3Auth, web3AuthProvider, isLoggedIn]);
 
   const login = async () => {
+    console.log(web3Auth);
     if (web3Auth) {
       const web3AuthProvider = await web3Auth.connectTo(WALLET_ADAPTERS.AUTH, {
         loginProvider: "jwt",

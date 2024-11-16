@@ -19,11 +19,13 @@ const Button = ({
   children,
   className = "",
   small = false,
+  disabled = false,
   onClick,
 }: {
   children: ReactNode;
   className?: string;
   small?: boolean;
+  disabled?: boolean;
   onClick: () => void;
 }) => {
   const [clicked, setClicked] = useState(false);
@@ -43,6 +45,7 @@ const Button = ({
       onClick={handleClick}
       onHoverStart={() => !clicked && setHovered(true)}
       onHoverEnd={() => !clicked && setHovered(false)}
+      disabled={disabled}
     >
       <motion.div
         style={{ height: "100%" }}
