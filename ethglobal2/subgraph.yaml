@@ -16,12 +16,24 @@ dataSources:
       apiVersion: 0.0.7
       language: wasm/assemblyscript
       entities:
-        - User
-        - Evaluation 
+        - RoleAdminChanged
+        - RoleGranted
+        - RoleRevoked
+        - completeProjectEvent
+        - createEvaluatorOfEvent
+        - createUserEvent
+        - failProjectEvent
+        - submitAttestationEvent
       abis:
         - name: PeerReview
           file: ./abis/PeerReview.json
-      eventHandlers: 
+      eventHandlers:
+        - event: RoleAdminChanged(indexed bytes32,indexed bytes32,indexed bytes32)
+          handler: handleRoleAdminChanged
+        - event: RoleGranted(indexed bytes32,indexed address,indexed address)
+          handler: handleRoleGranted
+        - event: RoleRevoked(indexed bytes32,indexed address,indexed address)
+          handler: handleRoleRevoked
         - event: completeProjectEvent(address,uint256,uint256)
           handler: handlecompleteProjectEvent
         - event: createEvaluatorOfEvent(address,uint256,address[])

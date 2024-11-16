@@ -43,7 +43,7 @@ const config: HardhatUserConfig = {
   networks: {
     scrollSepolia: {
       url: "https://sepolia-rpc.scroll.io/",
-      accounts:[process.env.PRIVATE_KEY || ""]
+      accounts:[process.env.PRIVATE_KEY, "c221d9dd5e7f11ac40c7aae0c5d83990a01d1696c87dfd0205e19ce2b2e06475"]
     },
   },
   etherscan: {
