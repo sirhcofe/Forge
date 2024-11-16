@@ -21,22 +21,22 @@ const main = async () => {
 	console.log('\n Sending notfication..')
 	await channelUser.channel.send([process.env.PUBLIC_KEY], {
 		notification: {
-			title: 'You awesome notification',
-			body: 'from your amazing protocol',
+			title: 'Evaluation matched',
+			body: 'Connect with your peer to arrange a time',
 		},
 	})
 
 	console.log('Notification sent')
 
-	await channelUser.channel.setting([
-		{type: 0, default: 1, description: 'Governance Notifications'},
-		{
-			type: 0,
-			default: 1,
-			description: 'Marketing Notifications',	
-		},
-		{type: 1, default: 5, description: 'Sales Notifications', data: {upper: 100, lower: 5}},
-	])
+	// await channelUser.channel.setting([
+	// 	{type: 0, default: 1, description: 'Governance Notifications'},
+	// 	{
+	// 		type: 0,
+	// 		default: 1,
+	// 		description: 'Marketing Notifications',	
+	// 	},
+	// 	{type: 1, default: 5, description: 'Sales Notifications', data: {upper: 100, lower: 5}},
+	// ])
 }
 
 main()

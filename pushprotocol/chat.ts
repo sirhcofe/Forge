@@ -27,23 +27,23 @@ const main = async () => {
 	const myChats = await firstUser.chat.list('CHATS')
 	myChats.map((chat) => console.log(`last msg from chat user ${chat.msg.fromCAIP10}: ${chat.msg.messageContent}`))
 
-	console.log('Creating a group chat')
-	const createdGroup = await firstUser.chat.group.create('my group chat', {
-		description: 'This is my group chat',
-		image: 'data:image/png;base64,iVBORw0K',
-		members: [secondSigner.address],
-		admins: [],
-		private: false,
-	})
+	// console.log('Creating a group chat')
+	// const createdGroup = await firstUser.chat.group.create('my group chat', {
+	// 	description: 'This is my group chat',
+	// 	image: 'data:image/png;base64,iVBORw0K',
+	// 	members: [secondSigner.address],
+	// 	admins: [],
+	// 	private: false,
+	// })
 
-	console.log('Group created with chatID: ', createdGroup.chatId)
+	// console.log('Group created with chatID: ', createdGroup.chatId)
 
-	console.log('Sending message to group chat')
-	await firstUser.chat.send(createdGroup.chatId, { content: 'Hello from group chat 1', type: 'Text' })
-	await firstUser.chat.send(createdGroup.chatId, { content: 'Hello from group chat 2', type: 'Text' })
-	await firstUser.chat.send(createdGroup.chatId, { content: 'Hello from group chat 3', type: 'Text' })
-	await firstUser.chat.send(createdGroup.chatId, { content: 'Hello from group chat 4', type: 'Text' })
-	console.log('Group chat message sent')
+	// console.log('Sending message to group chat')
+	// await firstUser.chat.send(createdGroup.chatId, { content: 'Hello from group chat 1', type: 'Text' })
+	// await secondUser.chat.send(createdGroup.chatId, { content: 'Hello from group chat 2', type: 'Text' })
+	// await firstUser.chat.send(createdGroup.chatId, { content: 'Hello from group chat 3', type: 'Text' })
+	// await firstUser.chat.send(createdGroup.chatId, { content: 'Hello from group chat 4', type: 'Text' })
+	// console.log('Group chat message sent')
 }
 
 main()
