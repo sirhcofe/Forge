@@ -20,8 +20,20 @@ import {
   WalletClient,
 } from "viem";
 import { scrollSepolia } from "viem/chains";
+import {
+  BiconomySmartAccountV2,
+  createPaymaster,
+  createSmartAccountClient,
+  IPaymaster,
+} from "@biconomy/account";
+import { ethers } from "ethers";
 
 export const Web3AuthContext = createContext<Web3AuthContextType | null>(null);
+
+const biconomyConfig = {
+  biconomyPaymasterApiKey: import.meta.env.VITE_BICONOMY_PAYMASTER_API_KEY,
+  bundleUrl: `https://bundler.biconomy.io/api/v2/534351/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44`,
+};
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [web3Auth, setWeb3Auth] = useState<Web3AuthNoModal | null>(null);
@@ -30,6 +42,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
   const [viemPublicClient, setViemPublicClient] = useState<PublicClient>();
   const [viemWalletClient, setViemWalletClient] = useState<WalletClient>();
+  const [smartWallet, setSmartWallet] = useState<BiconomySmartAccountV2>();
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] =
@@ -154,6 +167,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       transport: custom(web3AuthProvider!),
     });
     setViemWalletClient(wClient);
+
+    const ethersProvider = new ethers.providers.Web3Provider(provider);
+    const paymaster: IPaymaster = await createPaymaster({
+      paymasterUrl: `https://paymaster.biconomy.io/api/v1/534351/${biconomyConfig.biconomyPaymasterApiKey}`,
+      strictMode: false,
+    });
+    const smartWallet = await createSmartAccountClient({
+      signer: ethersProvider.getSigner(),
+      biconomyPaymasterApiKey: biconomyConfig.biconomyPaymasterApiKey,
+      bundlerUrl: biconomyConfig.bundleUrl,
+      paymaster: paymaster,
+      rpcUrl: "https://sepolia-rpc.scroll.io",
+      chainId: 534351,
+    });
+    setSmartWallet(smartWallet);
   };
 
   const logout = async () => {
@@ -173,11 +201,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       value={{
         isLoading,
         user,
+        viemPublicClient,
+        viemWalletClient,
+        smartWallet,
         login,
         logout,
         authenticateUser,
-        viemPublicClient,
-        viemWalletClient,
       }}
     >
       {children}
