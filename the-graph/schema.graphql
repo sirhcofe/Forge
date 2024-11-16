@@ -1,0 +1,22 @@
+type User @entity {
+  id: Bytes!
+  owner: Bytes!
+  username: String!
+  points:BigInt!
+  currentProject:BigInt!
+  completedProject:[BigInt!]!
+  evaluated:[Evaluation!]! @derivedFrom(field:"evaluatee")
+  evaluation:[Evaluation!]!
+  blockTimestamp: BigInt!
+}
+
+type Evaluation @entity {
+  id:Bytes!
+  evaluator:User!
+  score:BigInt!
+  evaluationFeedback:String!
+  projectId:BigInt!
+  evaluatee:User!
+  blockTimeStamp: BigInt!
+}
+

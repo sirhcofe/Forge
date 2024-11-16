@@ -1,0 +1,35 @@
+specVersion: 1.0.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: PeerReview
+    network: scroll-sepolia
+    source:
+      address: "0x60ECFC2B0d24b1eF7dEF4B793cB5FA5957301132"
+      abi: PeerReview
+      startBlock: 7303483
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - Evaluation 
+      abis:
+        - name: PeerReview
+          file: ./abis/PeerReview.json
+      eventHandlers: 
+        - event: completeProjectEvent(address,uint256,uint256)
+          handler: handlecompleteProjectEvent
+        - event: createEvaluatorOfEvent(address,uint256,address[])
+          handler: handlecreateEvaluatorOfEvent
+        - event: createUserEvent(address,string,uint256,uint256,uint256[],bool)
+          handler: handlecreateUserEvent
+        - event: failProjectEvent(address,uint256)
+          handler: handlefailProjectEvent
+        - event: submitAttestationEvent(address,address,uint256,uint256,string)
+          handler: handlesubmitAttestationEvent
+      file: ./src/peer-review.ts

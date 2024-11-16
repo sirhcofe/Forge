@@ -1,0 +1,8 @@
+{
+  "scroll-sepolia": {
+    "PeerReview": {
+      "address": "0x60ECFC2B0d24b1eF7dEF4B793cB5FA5957301132",
+      "startBlock": 7305725
+    }
+  }
+}

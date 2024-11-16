@@ -9,7 +9,7 @@ import { ISP } from '@ethsign/sign-protocol-evm/src/interfaces/ISP.sol';
 import { Attestation } from '@ethsign/sign-protocol-evm/src/models/Attestation.sol';
 import { DataLocation } from '@ethsign/sign-protocol-evm/src/models/DataLocation.sol';
 
-event createEvaluatorOfEvent(address user, address[] evaluators);
+
 
 //NOTE: for reference
 // struct Attestation {
@@ -25,39 +25,52 @@ event createEvaluatorOfEvent(address user, address[] evaluators);
 //   bytes data;
 // }
 
-struct User {
-  string username;
-  uint256 points;
-}
 
-struct Project {
-  string name;
-  string description;
-}
-
-struct Evaluations {
-  uint256 projectId;
-  uint256 score;
-  address evaluatee;
-  string evaluationFeedback;
-}
 
 contract PeerReview is AccessControl {
   bytes32 public constant EVALUATOR_ROLE = keccak256('EVALUATOR');
   bytes32 public constant EVALUATEE_ROLE = keccak256('EVALUATEE');
   bytes32 public constant ADMIN_ROLE = keccak256('ADMIN');
   bytes32 public constant OWNER_ROLE = keccak256('OWNER');
-
   mapping(uint256 => Project) public projects;
   uint256 private _projectMappingNumber;
   ISP public spInstance;
-
-  address[] private _userArray;
+  address[] public _userArray;
   uint64 private _evaluationSchemaId;
   mapping(address => User) public userProfiles;
-
-  // mapping(address => address) public evaluatorOf;
   mapping (address => address[]) public evaluatorOf;
+  address[] private higher_level;
+  address[] private equivalent_level;
+  address[] private lower_level;
+
+
+  event failProjectEvent(address userAddress, uint projectId);
+  event createUserEvent(address owner, string username, uint points, uint currentProject, uint[] completedProjects, bool created);
+  event createEvaluatorOfEvent(address user, uint projectId, address[] evaluators);
+  event completeProjectEvent(address user, uint projectId, uint amount);
+  event submitAttestationEvent(address evaluator, address evaluatee, uint projectId, uint score, string evaluationFeedback);
+
+
+  struct User {
+    address owner;
+    string username;
+    uint256 points;
+    uint256 currentProject;
+    uint256[] completedProjects;
+    bool created;
+  }
+
+  struct Project {
+    string name;
+    string description;
+  }
+
+  struct Evaluations {
+    uint256 projectId;
+    uint256 score;
+    address evaluatee;
+    string evaluationFeedback;
+  }
 
   constructor(uint64 schemaId) {
     _evaluationSchemaId = schemaId;
@@ -69,6 +82,59 @@ contract PeerReview is AccessControl {
   modifier useRole(bytes32 role) {
     require (hasRole(role ,msg.sender));
     _;
+  }
+
+  function createUser(string memory username) external {
+    require(userProfiles[msg.sender].created == false, "User already exists");
+    require(bytes(username).length > 0, "Username cannot be empty");
+    userProfiles[msg.sender] = User({
+      owner:msg.sender,
+      username: username,
+      points: 0,
+      currentProject: 0,
+      completedProjects: new uint256[](0),
+      created: true
+    });
+    _userArray.push(msg.sender);
+    emit createUserEvent(msg.sender,username, 0, 0, new uint256[](0), true);
+  }
+
+  function checkProjectExists(uint256 projectId) external view returns (bool) {
+    return projectId <= _projectMappingNumber && projectId > 0;
+  }
+
+  function addUserPoints(address userAddress, uint256 amount) external useRole(ADMIN_ROLE) {
+    require(userProfiles[userAddress].created == true, "User does not exists");
+    userProfiles[userAddress].points += amount;
+  }
+
+  function hasCompletedProject(address userAddress, uint256 projectId) external view returns (bool) {
+    require(userProfiles[userAddress].created == true, "User does not exists");
+    uint256[] memory completedProjects = userProfiles[userAddress].completedProjects;
+    for (uint256 i = 0; i < completedProjects.length; i++) {
+      if (completedProjects[i] == projectId) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function completeProject(address userAddress, uint256 projectId, uint256 amount, bool pass) external useRole(ADMIN_ROLE) {
+    require(userProfiles[userAddress].created == true, "User does not exists");
+    require(userProfiles[userAddress].currentProject == projectId, "Project has not started by this user");
+
+    uint256 score = pass ? amount : 0;
+
+    userProfiles[userAddress].points += score;
+    userProfiles[userAddress].currentProject = 0;
+    if (score > 0) {
+      userProfiles[userAddress].completedProjects.push(projectId);
+      // TODO: emit pass event
+    emit completeProjectEvent(userAddress, projectId, amount);
+    } else {
+      emit failProjectEvent(userAddress, projectId);
+      //TODO: emit fail event
+    }
   }
 
   function createNewProject(string calldata name, string calldata description) external useRole(OWNER_ROLE) {
@@ -89,17 +155,42 @@ contract PeerReview is AccessControl {
     // emit AdminAdded(account);
   }
 
+  function setEvaluator(address account) external useRole(ADMIN_ROLE) {
+    grantRole(EVALUATOR_ROLE, account);
+    // emit AdminAdded(account);
+  }
+
+  function setEvaluatee(address account) external useRole(ADMIN_ROLE) {
+    grantRole(EVALUATEE_ROLE, account);
+    // emit AdminAdded(account);
+  }
+
+
   function transferOwnership(address account) external useRole(OWNER_ROLE) {
     grantRole(OWNER_ROLE, account);
     revokeRole(OWNER_ROLE, msg.sender);
     // emit AdminAdded(account);
   }
 
-  function setEvaluator(address evaluator, address evaluatee) private {
-    grantRole(EVALUATOR_ROLE, evaluator);
-    grantRole(EVALUATEE_ROLE, evaluatee);
+  function setEvaluator(address evaluator, address evaluatee) internal {
+    // grantRole(EVALUATOR_ROLE, evaluator);
+    // grantRole(EVALUATEE_ROLE, evaluatee);
     evaluatorOf[evaluatee].push(evaluator);
   }
+
+  function getEvaluators(address evaluatee) external view returns ( address[] memory) {
+    return evaluatorOf[evaluatee];
+  }
+
+  function isEvaluator(address evaluatee, address evaluator) internal view returns (bool) {
+    address[] memory evaluators = evaluatorOf[evaluatee];
+    for (uint256 i = 0; i < evaluators.length; i++) {
+        if (evaluators[i] == evaluator) {
+            return true;
+        }
+    }
+    return false;
+}
 
   function removeEvaluator(address evaluatee) private {
     address[] storage evaluators = evaluatorOf[msg.sender]; // Get the array of evaluators for the sender
@@ -118,15 +209,21 @@ contract PeerReview is AccessControl {
     revokeRole(EVALUATEE_ROLE, evaluatee);
   }
 
-  function randomNumberGenerator(uint max) private returns (uint) {
+  function randomNumberGenerator(uint max) private view returns (uint) {
       return uint(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender))) % max;
   }
 
+  function startProject(uint256 projectId) external {
+    require(projectId > 0 && projectId <= _projectMappingNumber, "Project does not exist");
+    require(userProfiles[msg.sender].created == true, "User does not exist");
+
+    userProfiles[msg.sender].currentProject = projectId;
+  }
+
   //TODO: Function to set the evaluation, random matching
-  function matchmaking(address evaluatee) private {
-    address[] memory higher_level;
-    address[] memory equivalent_level;
-    address[] memory lower_level;
+  function matchmaking(uint projectId) public {
+    require(userProfiles[msg.sender].currentProject == projectId, "User has not started this project");
+
     for (uint i = 0; i < _userArray.length; i++) {
       if (_userArray[i] != msg.sender) {
         uint evaluator_points = userProfiles[_userArray[i]].points;
@@ -141,30 +238,33 @@ contract PeerReview is AccessControl {
     }
     if (higher_level.length > 0) {
         uint randomIndex = randomNumberGenerator(higher_level.length);
-        evaluatorOf[msg.sender].push(higher_level[randomIndex]);
+        setEvaluator(higher_level[randomIndex], msg.sender);
     }
 
     if (equivalent_level.length > 0) {
         uint randomIndex = randomNumberGenerator(equivalent_level.length);
-        evaluatorOf[msg.sender].push(equivalent_level[randomIndex]);
+        setEvaluator(equivalent_level[randomIndex], msg.sender);
     }
 
     if (lower_level.length > 0) {
         uint randomIndex = randomNumberGenerator(lower_level.length);
-        evaluatorOf[msg.sender].push(lower_level[randomIndex]);
+        setEvaluator(lower_level[randomIndex], msg.sender);
     }
+    delete higher_level;
+    delete equivalent_level;
+    delete lower_level;
 
-    emit createEvaluatorOfEvent(msg.sender, evaluatorOf[msg.sender]);
+    emit createEvaluatorOfEvent(msg.sender, projectId, evaluatorOf[msg.sender]);
   }
 
-  function submitEvaluation(
+  function submitEvaluation (
     Evaluations memory evaluationData
-  ) external useRole(EVALUATOR_ROLE) {
+  ) external returns(uint) {
     require(
-      msg.sender == evaluatorOf[evaluationData.evaluatee],
+      isEvaluator(evaluationData.evaluatee, msg.sender),
       'This user not authorized to evaluate the evaluatee.'
     );
-    Project memory project = projects[evaluationData.projectId];
+    uint projectId = evaluationData.projectId;
     bytes[] memory recipients = new bytes[](1);
     recipients[0] = abi.encode(evaluationData.evaluatee);
     bytes memory encodedEvaluationData = abi.encode(evaluationData);
@@ -181,54 +281,15 @@ contract PeerReview is AccessControl {
       recipients: recipients,
       data: encodedEvaluationData
     });
+    uint256 attestationId = spInstance.attest(attestation, "", "", "");
+    emit submitAttestationEvent(msg.sender, evaluationData.evaluatee, projectId, evaluationData.score, evaluationData.evaluationFeedback);
+    return attestationId;
   }
 }
 
-// function confirmTaskCompletion(
-//     uint256 taskId,
-//     address employeeAddress,
-//     uint256 projectId,
-//     bool completed,
-//     uint256 storypoints
-// ) external onlyManager returns (uint64) {
-//     Task memory task = taskList[taskId];
-//     if (task.assignee == employeeAddress) {
-//         if (task.finished) {
-//             bytes[] memory recipient = new bytes[](1);
-//             recipient[0] = abi.encode(employeeAddress);
-//
-//             // TODO: Change this to parameter
-//             bytes memory data = abi.encode(
-//                 projectId,
-//                 taskId,
-//                 completed,
-//                 storypoints
-//             );
-//
-//             Attestation memory a = Attestation({
-//                 schemaId: schemaId,
-//                 linkedAttestationId: 0,
-//                 attestTimestamp: 0,
-//                 revokeTimestamp: 0,
-//                 attester: address(this),
-//                 validUntil: 0,
-//                 dataLocation: DataLocation.ONCHAIN,
-//                 revoked: false,
-//                 recipients: recipient,
-//                 data: data
-//             });
-//             uint64 attestationId = spInstance.attest(a, "", "", "");
-//             emit TaskCompleted(
-//                 taskId,
-//                 employeeAddress,
-//                 _msgSender(),
-//                 attestationId
-//             );
-//             return attestationId;
-//         } else {
-//             revert TaskNotMarkedCompletedYet();
-//         }
-//     } else {
-//         revert TaskAssigneeAddressMismatch();
-//     }
-// }
+//EVENTS
+//create user
+//matchmaking
+//submitattestation
+//complete project event
+//fail project event
