@@ -44,12 +44,12 @@ contract HookUtils is Ownable {
     require(target.checkProjectExists(projectId), ProjectDoesNotExist());
   }
 
-  function _checkProjectScore(uint256 score) internal view returns (bool) {
+  function _checkProjectScore(uint256 score) internal pure returns (bool) {
     return score >= 100;
   }
 
   function _checkProjectAttestations(address user) internal view returns (bool) {
-    UserAttestation[] memory attestations = userAttestation[user];
+    UserAttestation[] storage attestations = userAttestation[user];
     
     for(uint i = 0; i < attestations.length; i++) {
       if(attestations[i].score <= 100) {
@@ -97,7 +97,7 @@ contract PeerReviewHook is ISPHook, HookUtils {
       uint256 _projectId,
       uint256 score,
       address evaluatee,
-      string memory evaluationFeedback
+      // string memory evaluationFeedback
     ) = abi.decode(attestation.data, (uint64, uint64, address, string));
 
     addAttestationToUserList(UserAttestation({
@@ -106,10 +106,12 @@ contract PeerReviewHook is ISPHook, HookUtils {
       score: score
     }), evaluatee);
     
-    UserAttestation[] memory userAttestations = userAttestation[evaluatee];
+
+    UserAttestation[] storage userAttestations = userAttestation[evaluatee];
     if (userAttestations.length == 3) {
       bool passed = _checkProjectAttestations(evaluatee);
       completeProjectCall(evaluatee, _projectId, score, passed);
+      userAttestation[evaluatee] = new UserAttestation[](0);
       // completeProjectCall(evaluatee, _projectId, score, _checkProjectAttestations(evaluatee));
     }
   }

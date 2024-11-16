@@ -32,8 +32,8 @@ contract PeerReview is AccessControl {
   bytes32 public constant EVALUATEE_ROLE = keccak256('EVALUATEE');
   bytes32 public constant ADMIN_ROLE = keccak256('ADMIN');
   bytes32 public constant OWNER_ROLE = keccak256('OWNER');
-  // mapping(uint256 => Project) public projects;
-  // uint256 private _projectMappingNumber;
+  mapping(uint256 => Project) public projects;
+  uint256 private _projectMappingNumber;
   ISP public spInstance;
   address[] private _userArray;
   uint64 private _evaluationSchemaId;
@@ -43,6 +43,9 @@ contract PeerReview is AccessControl {
   address[] private equivalent_level;
   address[] private lower_level;
 
+
+  event failProjectEvent(address userAddress, uint projectId);
+  event createUserEvent(string username, uint points, uint currentProject, uint[] completedProjects, bool created);
   event createEvaluatorOfEvent(address user, uint projectId, address[] evaluators);
   event completeProjectEvent(address user, uint projectId, uint amount);
   event submitAttestationEvent(address evaluatee, uint projectId, uint score, string evaluationFeedback);
@@ -56,10 +59,10 @@ contract PeerReview is AccessControl {
     bool created;
   }
 
-  // struct Project {
-  //   string name;
-  //   string description;
-  // }
+  struct Project {
+    string name;
+    string description;
+  }
 
   struct Evaluations {
     uint256 projectId;
@@ -70,7 +73,7 @@ contract PeerReview is AccessControl {
 
   constructor(uint64 schemaId) {
     _evaluationSchemaId = schemaId;
-    // _projectMappingNumber = 0;
+    _projectMappingNumber = 0;
     _grantRole(OWNER_ROLE, msg.sender);
     _grantRole(ADMIN_ROLE, msg.sender);
   }
@@ -89,9 +92,10 @@ contract PeerReview is AccessControl {
       completedProjects: new uint256[](0),
       created: true
     });
+    emit createUserEvent(username, 0, 0, new uint256[](0), true);
   }
 
-  function checkProjectExists(uint256 projectId) external returns (bool) {
+  function checkProjectExists(uint256 projectId) external view returns (bool) {
     return projectId <= _projectMappingNumber && projectId > 0;
   }
 
@@ -113,6 +117,7 @@ contract PeerReview is AccessControl {
       // TODO: emit pass event
     emit completeProjectEvent(userAddress, projectId, amount);
     } else {
+      emit failProjectEvent(userAddress, projectId);
       //TODO: emit fail event
     }
   }
@@ -294,4 +299,5 @@ contract PeerReview is AccessControl {
 //create user
 //matchmaking
 //submitattestation
-//
+//complete project event
+//fail project event
