@@ -9,7 +9,7 @@ import { ISP } from '@ethsign/sign-protocol-evm/src/interfaces/ISP.sol';
 import { Attestation } from '@ethsign/sign-protocol-evm/src/models/Attestation.sol';
 import { DataLocation } from '@ethsign/sign-protocol-evm/src/models/DataLocation.sol';
 
-event createEvaluatorOfEvent(address user, address[] evaluators);
+
 
 //NOTE: for reference
 // struct Attestation {
@@ -25,46 +25,49 @@ event createEvaluatorOfEvent(address user, address[] evaluators);
 //   bytes data;
 // }
 
-struct User {
-  string username;
-  uint256 points;
-  uint256 currentProject;
-  uint256[] completedProjects;
-  bool created;
-}
 
-struct Project {
-  string name;
-  string description;
-}
-
-struct Evaluations {
-  uint256 projectId;
-  uint256 score;
-  address evaluatee;
-  string evaluationFeedback;
-}
 
 contract PeerReview is AccessControl {
   bytes32 public constant EVALUATOR_ROLE = keccak256('EVALUATOR');
   bytes32 public constant EVALUATEE_ROLE = keccak256('EVALUATEE');
   bytes32 public constant ADMIN_ROLE = keccak256('ADMIN');
   bytes32 public constant OWNER_ROLE = keccak256('OWNER');
-
-  mapping(uint256 => Project) public projects;
-  uint256 private _projectMappingNumber;
+  // mapping(uint256 => Project) public projects;
+  // uint256 private _projectMappingNumber;
   ISP public spInstance;
-
   address[] private _userArray;
   uint64 private _evaluationSchemaId;
   mapping(address => User) public userProfiles;
-
-  // mapping(address => address) public evaluatorOf;
   mapping (address => address[]) public evaluatorOf;
+
+  event createEvaluatorOfEvent(address user, address[] evaluators);
+  event completeProjectEvent(address user, uint projectId, uint amount);
+  event submitAttestationEvent(address evaluatee, uint projectId, uint score, string evaluationFeedback);
+   
+
+  struct User {
+    string username;
+    uint256 points;
+    uint256 currentProject;
+    uint256[] completedProjects;
+    bool created;
+  }
+
+  // struct Project {
+  //   string name;
+  //   string description;
+  // }
+
+  struct Evaluations {
+    uint256 projectId;
+    uint256 score;
+    address evaluatee;
+    string evaluationFeedback;
+  }
 
   constructor(uint64 schemaId) {
     _evaluationSchemaId = schemaId;
-    _projectMappingNumber = 0;
+    // _projectMappingNumber = 0;
     _grantRole(OWNER_ROLE, msg.sender);
     _grantRole(ADMIN_ROLE, msg.sender);
   }
@@ -98,13 +101,13 @@ contract PeerReview is AccessControl {
     userProfiles[userAddress].completedProjects.push(projectId);
     userProfiles[userAddress].currentProject = 0;
 
-    // TODO: emit event??
+    completeProjectEvent(userAddress, projectId, amount);
   }
 
-  function createNewProject(string calldata name, string calldata description) external useRole(OWNER_ROLE) {
-    _projectMappingNumber++;
-    projects[_projectMappingNumber] = Project(name, description);
-  }
+  // function createNewProject(string calldata name, string calldata description) external useRole(OWNER_ROLE) {
+  //   _projectMappingNumber++;
+  //   projects[_projectMappingNumber] = Project(name, description);
+  // }
 
   function setSPInstance(address instance) external useRole(OWNER_ROLE) {
     spInstance = ISP(instance);
@@ -152,15 +155,15 @@ contract PeerReview is AccessControl {
       return uint(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender))) % max;
   }
 
-  function startProject(uint256 projectId) external {
-    require(projectId > 0 && projectId <= _projectMappingNumber, "Project does not exist");
-    require(userProfiles[msg.sender].created == true, "User does not exist"); 
+  // function startProject(uint256 projectId) external {
+  //   require(projectId > 0 && projectId <= _projectMappingNumber, "Project does not exist");
+  //   require(userProfiles[msg.sender].created == true, "User does not exist"); 
 
-    userProfiles[msg.sender].currentProject = projectId;
-  }
+  //   userProfiles[msg.sender].currentProject = projectId;
+  // }
 
   //TODO: Function to set the evaluation, random matching
-  function matchmaking(address evaluatee) private {
+  function matchmaking(address evaluatee) public {
     address[] memory higher_level;
     address[] memory equivalent_level;
     address[] memory lower_level;
@@ -178,17 +181,17 @@ contract PeerReview is AccessControl {
     }
     if (higher_level.length > 0) {
         uint randomIndex = randomNumberGenerator(higher_level.length);
-        evaluatorOf[msg.sender].push(higher_level[randomIndex]);
+        setEvaluator(higher_level[randomIndex],evaluatorOf[msg.sender])
     }
 
     if (equivalent_level.length > 0) {
         uint randomIndex = randomNumberGenerator(equivalent_level.length);
-        evaluatorOf[msg.sender].push(equivalent_level[randomIndex]);
+        setEvaluator(equivalent_level[randomIndex],evaluatorOf[msg.sender])
     }
 
     if (lower_level.length > 0) {
         uint randomIndex = randomNumberGenerator(lower_level.length);
-        evaluatorOf[msg.sender].push(lower_level[randomIndex]);
+        setEvaluator(lower_level[randomIndex],evaluatorOf[msg.sender])
     }
 
     emit createEvaluatorOfEvent(msg.sender, evaluatorOf[msg.sender]);
@@ -201,7 +204,7 @@ contract PeerReview is AccessControl {
       msg.sender == evaluatorOf[evaluationData.evaluatee],
       'This user not authorized to evaluate the evaluatee.'
     );
-    Project memory project = projects[evaluationData.projectId];
+    uint projectId = evaluationData.projectId;
     bytes[] memory recipients = new bytes[](1);
     recipients[0] = abi.encode(evaluationData.evaluatee);
     bytes memory encodedEvaluationData = abi.encode(evaluationData);
@@ -218,9 +221,8 @@ contract PeerReview is AccessControl {
       recipients: recipients,
       data: encodedEvaluationData
     });
-    uint256 attestationId = spInstance.attest(attestation, "", "", "");
-    // TODO: create event for this
-    // emit event for attestation
+    uint256 attestationId = spInstance.attest(attestation, "", "", ""); 
+    emit submitAttestationEvent(evaluationData.evaluatee, projectId, evaluationData.score, evaluationData.evaluationFeedback);
     return attestationId;
   }
 }
@@ -273,3 +275,9 @@ contract PeerReview is AccessControl {
 //         revert TaskAssigneeAddressMismatch();
 //     }
 // }
+
+//EVENTS
+//create user
+//matchmaking
+//submitattestation
+//
