@@ -8,9 +8,9 @@ dataSources:
     name: PeerReview
     network: scroll-sepolia
     source:
-      address: "0x8e4dB19E683684Ed4F973aD5F890A716E202ACaa"
+      address: "0x60ECFC2B0d24b1eF7dEF4B793cB5FA5957301132"
       abi: PeerReview
-      startBlock: 7304973
+      startBlock: 7305725
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -38,7 +38,7 @@ dataSources:
           handler: handlecompleteProjectEvent
         - event: createEvaluatorOfEvent(address,uint256,address[])
           handler: handlecreateEvaluatorOfEvent
-        - event: createUserEvent(string,uint256,uint256,uint256[],bool)
+        - event: createUserEvent(address,string,uint256,uint256,uint256[],bool)
           handler: handlecreateUserEvent
         - event: failProjectEvent(address,uint256)
           handler: handlefailProjectEvent

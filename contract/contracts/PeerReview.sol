@@ -45,13 +45,14 @@ contract PeerReview is AccessControl {
 
 
   event failProjectEvent(address userAddress, uint projectId);
-  event createUserEvent(string username, uint points, uint currentProject, uint[] completedProjects, bool created);
+  event createUserEvent(address owner, string username, uint points, uint currentProject, uint[] completedProjects, bool created);
   event createEvaluatorOfEvent(address user, uint projectId, address[] evaluators);
   event completeProjectEvent(address user, uint projectId, uint amount);
   event submitAttestationEvent(address evaluator, address evaluatee, uint projectId, uint score, string evaluationFeedback);
 
 
   struct User {
+    address owner;
     string username;
     uint256 points;
     uint256 currentProject;
@@ -86,13 +87,14 @@ contract PeerReview is AccessControl {
   function createUser(string memory username) external {
     require(userProfiles[msg.sender].created == false, "User already exists");
     userProfiles[msg.sender] = User({
+      owner:msg.sender,
       username: username,
       points: 0,
       currentProject: 0,
       completedProjects: new uint256[](0),
       created: true
     });
-    emit createUserEvent(username, 0, 0, new uint256[](0), true);
+    emit createUserEvent(msg.sender,username, 0, 0, new uint256[](0), true);
   }
 
   function checkProjectExists(uint256 projectId) external view returns (bool) {

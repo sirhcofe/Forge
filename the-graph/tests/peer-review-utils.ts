@@ -141,6 +141,7 @@ export function createcreateEvaluatorOfEventEvent(
 }
 
 export function createcreateUserEventEvent(
+  owner: Address,
   username: string,
   points: BigInt,
   currentProject: BigInt,
@@ -151,6 +152,9 @@ export function createcreateUserEventEvent(
 
   createUserEventEvent.parameters = new Array()
 
+  createUserEventEvent.parameters.push(
+    new ethereum.EventParam("owner", ethereum.Value.fromAddress(owner))
+  )
   createUserEventEvent.parameters.push(
     new ethereum.EventParam("username", ethereum.Value.fromString(username))
   )

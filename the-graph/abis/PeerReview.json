@@ -145,6 +145,12 @@
     "inputs": [
       {
         "indexed": false,
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
         "internalType": "string",
         "name": "username",
         "type": "string"
@@ -489,6 +495,7 @@
     "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
     "name": "userProfiles",
     "outputs": [
+      { "internalType": "address", "name": "owner", "type": "address" },
       { "internalType": "string", "name": "username", "type": "string" },
       { "internalType": "uint256", "name": "points", "type": "uint256" },
       {
