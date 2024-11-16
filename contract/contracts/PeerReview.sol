@@ -1,26 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+//NOTE: schemaId=0x55
+//NOTE: onchain_evm_534351_0x55
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import '@openzeppelin/contracts/access/AccessControl.sol';
 
-import {ISP} from "@ethsign/sign-protocol-evm/src/interfaces/ISP.sol";
-import {Attestation} from "@ethsign/sign-protocol-evm/src/models/Attestation.sol";
-import {DataLocation} from "@ethsign/sign-protocol-evm/src/models/DataLocation.sol";
+import { ISP } from '@ethsign/sign-protocol-evm/src/interfaces/ISP.sol';
+import { Attestation } from '@ethsign/sign-protocol-evm/src/models/Attestation.sol';
+import { DataLocation } from '@ethsign/sign-protocol-evm/src/models/DataLocation.sol';
 
 event createEvaluatorOfEvent(address user, address[] evaluators);
 
-struct Attestation {
-    uint64 schemaId;
-    uint64 linkedAttestationId;
-    uint64 attestTimestamp;
-    uint64 revokeTimestamp;
-    address attester;
-    uint64 validUntil;
-    DataLocation dataLocation;
-    bool revoked;
-    bytes[] recipients;
-    bytes data;
-}
+//NOTE: for reference
+// struct Attestation {
+//   uint64 schemaId;
+//   uint64 linkedAttestationId;
+//   uint64 attestTimestamp;
+//   uint64 revokeTimestamp;
+//   address attester;
+//   uint64 validUntil;
+//   DataLocation dataLocation;
+//   bool revoked;
+//   bytes[] recipients;
+//   bytes data;
+// }
 
 struct User {
   string username;
@@ -35,76 +38,92 @@ struct Project {
 struct Evaluations {
   uint256 projectId;
   uint256 score;
-  uint256 evaluationNumber;
   address evaluatee;
   string evaluationFeedback;
 }
 
 contract PeerReview is AccessControl {
-  bytes public constant EVALUATOR_ROLE = keccak256("EVALUATOR");
-  bytes public constant EVALUATEE_ROLE = keccak256("EVALUATEE");
-  bytes public constant ADMIN_ROLE = keccak256("ADMIN");
-  bytes public constant OWNER_ROLE = keccak256("OWNER");
+  bytes32 public constant EVALUATOR_ROLE = keccak256('EVALUATOR');
+  bytes32 public constant EVALUATEE_ROLE = keccak256('EVALUATEE');
+  bytes32 public constant ADMIN_ROLE = keccak256('ADMIN');
+  bytes32 public constant OWNER_ROLE = keccak256('OWNER');
 
-  mapping (uint256 => Project) public projects;
-  private uint256 _projectMappingNumber;
+  mapping(uint256 => Project) public projects;
+  uint256 private _projectMappingNumber;
+  ISP public spInstance;
 
-  private address[] _userArray;
-  private uint64 _evaluationSchemaId;
-  mapping (address => User) public userProfiles;
+  address[] private _userArray;
+  uint64 private _evaluationSchemaId;
+  mapping(address => User) public userProfiles;
 
-  // mapping (address => address) public evaluatorOf;
+  // mapping(address => address) public evaluatorOf;
   mapping (address => address[]) public evaluatorOf;
 
   constructor(uint64 schemaId) {
-    _evaluationSchemaId= schemaId;
+    _evaluationSchemaId = schemaId;
     _projectMappingNumber = 0;
     _grantRole(OWNER_ROLE, msg.sender);
     _grantRole(ADMIN_ROLE, msg.sender);
   }
 
-  function createNewProject(string name, string description) {
-    
+  modifier useRole(bytes32 role) {
+    require (hasRole(role ,msg.sender));
+    _;
   }
 
-  function setSPInstance(address instance) external hasRole(OWNER_ROLE) {
-      spInstance = ISP(instance);
+  function createNewProject(string calldata name, string calldata description) external useRole(OWNER_ROLE) {
+    _projectMappingNumber++;
+    projects[_projectMappingNumber] = Project(name, description);
   }
 
-  function setSchemaID(uint64 schemaId_) external hasRole(OWNER_ROLE) {
-      schemaId = schemaId_;
+  function setSPInstance(address instance) external useRole(OWNER_ROLE) {
+    spInstance = ISP(instance);
   }
 
-  function setAdmin(address account) external hasRole(OWNER_ROLE) {
-      grantRole(ADMIN_ROLE, account);
-      emit AdminAdded(account);
+  function setSchemaID(uint64 schemaId_) external useRole(OWNER_ROLE) {
+    _evaluationSchemaId = schemaId_;
   }
 
-  function transferOwnership(address account) external hasRole(OWNER_ROLE) {
-      grantRole(OWNER_ROLE, account);
-      revokeRole(OWNER_ROLE, msg.sender);
-      emit AdminAdded(account);
+  function setAdmin(address account) external useRole(OWNER_ROLE) {
+    grantRole(ADMIN_ROLE, account);
+    // emit AdminAdded(account);
+  }
+
+  function transferOwnership(address account) external useRole(OWNER_ROLE) {
+    grantRole(OWNER_ROLE, account);
+    revokeRole(OWNER_ROLE, msg.sender);
+    // emit AdminAdded(account);
   }
 
   function setEvaluator(address evaluator, address evaluatee) private {
     grantRole(EVALUATOR_ROLE, evaluator);
     grantRole(EVALUATEE_ROLE, evaluatee);
-    evaluatorOf[evaluatee] = evaluator;
+    evaluatorOf[evaluatee].push(evaluator);
   }
 
   function removeEvaluator(address evaluatee) private {
-    address _evaluator = evaluatorOf[evaluatee];
-    evaluatorOf[evaluatee] = address(0);
-    revokeRole(EVALUATOR_ROLE, _evaluator);
+    address[] storage evaluators = evaluatorOf[msg.sender]; // Get the array of evaluators for the sender
+     uint length = evaluators.length;
+
+     // Find the index of the evaluator to remove
+     for (uint i = 0; i < length; i++) {
+         if (evaluators[i] == msg.sender) {
+             // Found the evaluator, now we need to remove it
+             evaluators[i] = evaluators[length - 1]; // Move the last element into the place of the element to remove
+             evaluators.pop(); // Remove the last element (which is now a duplicate)
+             break; // Exit the loop since we've found the evaluator
+         }
+     }
+    revokeRole(EVALUATOR_ROLE, msg.sender);
     revokeRole(EVALUATEE_ROLE, evaluatee);
   }
 
   function randomNumberGenerator(uint max) private returns (uint) {
-      return uint(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender)))) % max;
+      return uint(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender))) % max;
   }
 
   //TODO: Function to set the evaluation, random matching
-  function matchmaking(address evaluatee) {
+  function matchmaking(address evaluatee) private {
     address[] memory higher_level;
     address[] memory equivalent_level;
     address[] memory lower_level;
@@ -135,64 +154,81 @@ contract PeerReview is AccessControl {
         evaluatorOf[msg.sender].push(lower_level[randomIndex]);
     }
 
-    emit createEvaluatorOfEvent(msg.sender, evaluatorOf[msg.sender])
-
-
-
+    emit createEvaluatorOfEvent(msg.sender, evaluatorOf[msg.sender]);
   }
 
-  function submitEvaluation(address evaluatee) external hasRole(EVALUATOR_ROLE) {
-    require(msg.sender == evaluatorOf(evaluatee));
-    
-  }
+  function submitEvaluation(
+    Evaluations memory evaluationData
+  ) external useRole(EVALUATOR_ROLE) {
+    require(
+      msg.sender == evaluatorOf[evaluationData.evaluatee],
+      'This user not authorized to evaluate the evaluatee.'
+    );
+    Project memory project = projects[evaluationData.projectId];
+    bytes[] memory recipients = new bytes[](1);
+    recipients[0] = abi.encode(evaluationData.evaluatee);
+    bytes memory encodedEvaluationData = abi.encode(evaluationData);
 
+    Attestation memory attestation = Attestation({
+      schemaId: _evaluationSchemaId,
+      linkedAttestationId: 0,
+      attestTimestamp: 0,
+      revokeTimestamp: 0,
+      attester: msg.sender,
+      validUntil: 0,
+      dataLocation: DataLocation.ONCHAIN,
+      revoked: false,
+      recipients: recipients,
+      data: encodedEvaluationData
+    });
+  }
 }
 
-    // function confirmTaskCompletion(
-    //     uint256 taskId,
-    //     address employeeAddress,
-    //     uint256 projectId,
-    //     bool completed,
-    //     uint256 storypoints
-    // ) external onlyManager returns (uint64) {
-    //     Task memory task = taskList[taskId];
-    //     if (task.assignee == employeeAddress) {
-    //         if (task.finished) {
-    //             bytes[] memory recipient = new bytes[](1);
-    //             recipient[0] = abi.encode(employeeAddress);
-    //
-    //             // TODO: Change this to parameter
-    //             bytes memory data = abi.encode(
-    //                 projectId,
-    //                 taskId,
-    //                 completed,
-    //                 storypoints
-    //             );
-    //
-    //             Attestation memory a = Attestation({
-    //                 schemaId: schemaId,
-    //                 linkedAttestationId: 0,
-    //                 attestTimestamp: 0,
-    //                 revokeTimestamp: 0,
-    //                 attester: address(this),
-    //                 validUntil: 0,
-    //                 dataLocation: DataLocation.ONCHAIN,
-    //                 revoked: false,
-    //                 recipients: recipient,
-    //                 data: data
-    //             });
-    //             uint64 attestationId = spInstance.attest(a, "", "", "");
-    //             emit TaskCompleted(
-    //                 taskId,
-    //                 employeeAddress,
-    //                 _msgSender(),
-    //                 attestationId
-    //             );
-    //             return attestationId;
-    //         } else {
-    //             revert TaskNotMarkedCompletedYet();
-    //         }
-    //     } else {
-    //         revert TaskAssigneeAddressMismatch();
-    //     }
-    // }
+// function confirmTaskCompletion(
+//     uint256 taskId,
+//     address employeeAddress,
+//     uint256 projectId,
+//     bool completed,
+//     uint256 storypoints
+// ) external onlyManager returns (uint64) {
+//     Task memory task = taskList[taskId];
+//     if (task.assignee == employeeAddress) {
+//         if (task.finished) {
+//             bytes[] memory recipient = new bytes[](1);
+//             recipient[0] = abi.encode(employeeAddress);
+//
+//             // TODO: Change this to parameter
+//             bytes memory data = abi.encode(
+//                 projectId,
+//                 taskId,
+//                 completed,
+//                 storypoints
+//             );
+//
+//             Attestation memory a = Attestation({
+//                 schemaId: schemaId,
+//                 linkedAttestationId: 0,
+//                 attestTimestamp: 0,
+//                 revokeTimestamp: 0,
+//                 attester: address(this),
+//                 validUntil: 0,
+//                 dataLocation: DataLocation.ONCHAIN,
+//                 revoked: false,
+//                 recipients: recipient,
+//                 data: data
+//             });
+//             uint64 attestationId = spInstance.attest(a, "", "", "");
+//             emit TaskCompleted(
+//                 taskId,
+//                 employeeAddress,
+//                 _msgSender(),
+//                 attestationId
+//             );
+//             return attestationId;
+//         } else {
+//             revert TaskNotMarkedCompletedYet();
+//         }
+//     } else {
+//         revert TaskAssigneeAddressMismatch();
+//     }
+// }
