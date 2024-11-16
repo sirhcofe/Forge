@@ -1,22 +1,6 @@
-type User @entity {
+type ExampleEntity @entity {
   id: Bytes!
-  owner: Bytes!
-  username: String!
-  points:BigInt!
-  currentProject:BigInt!
-  completedProject:[BigInt!]!
-  evaluated:[Evaluation!]! @derivedFrom(field:"evaluatee")
-  evaluation:[Evaluation!]!
-  blockTimestamp: BigInt!
+  count: BigInt!
+  role: Bytes! # bytes32
+  previousAdminRole: Bytes! # bytes32
 }
-
-type Evaluation @entity {
-  id:Bytes!
-  evaluator:User!
-  score:BigInt!
-  evaluationFeedback:String!
-  projectId:BigInt!
-  evaluatee:User!
-  blockTimeStamp: BigInt!
-}
-
