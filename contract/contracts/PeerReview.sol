@@ -35,7 +35,7 @@ contract PeerReview is AccessControl {
   mapping(uint256 => Project) public projects;
   uint256 private _projectMappingNumber;
   ISP public spInstance;
-  address[] private _userArray;
+  address[] public _userArray;
   uint64 private _evaluationSchemaId;
   mapping(address => User) public userProfiles;
   mapping (address => address[]) public evaluatorOf;
@@ -85,6 +85,7 @@ contract PeerReview is AccessControl {
 
   function createUser(string memory username) external {
     require(userProfiles[msg.sender].created == false, "User already exists");
+    require(bytes(username).length > 0, "Username cannot be empty");
     userProfiles[msg.sender] = User({
       username: username,
       points: 0,
@@ -92,6 +93,7 @@ contract PeerReview is AccessControl {
       completedProjects: new uint256[](0),
       created: true
     });
+    _userArray.push(msg.sender);
     emit createUserEvent(username, 0, 0, new uint256[](0), true);
   }
 
@@ -133,10 +135,10 @@ contract PeerReview is AccessControl {
     }
   }
 
-  // function createNewProject(string calldata name, string calldata description) external useRole(OWNER_ROLE) {
-  //   _projectMappingNumber++;
-  //   projects[_projectMappingNumber] = Project(name, description);
-  // }
+  function createNewProject(string calldata name, string calldata description) external useRole(OWNER_ROLE) {
+    _projectMappingNumber++;
+    projects[_projectMappingNumber] = Project(name, description);
+  }
 
   function setSPInstance(address instance) external useRole(OWNER_ROLE) {
     spInstance = ISP(instance);
@@ -168,10 +170,14 @@ contract PeerReview is AccessControl {
     // emit AdminAdded(account);
   }
 
-  function setEvaluator(address evaluator, address evaluatee) private {
-    grantRole(EVALUATOR_ROLE, evaluator);
-    grantRole(EVALUATEE_ROLE, evaluatee);
+  function setEvaluator(address evaluator, address evaluatee) internal {
+    // grantRole(EVALUATOR_ROLE, evaluator);
+    // grantRole(EVALUATEE_ROLE, evaluatee);
     evaluatorOf[evaluatee].push(evaluator);
+  }
+
+  function getEvaluators(address evaluatee) external view returns ( address[] memory) {
+    return evaluatorOf[evaluatee];
   }
 
   function isEvaluator(address evaluatee, address evaluator) internal view returns (bool) {
@@ -205,15 +211,16 @@ contract PeerReview is AccessControl {
       return uint(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender))) % max;
   }
 
-  // function startProject(uint256 projectId) external {
-  //   require(projectId > 0 && projectId <= _projectMappingNumber, "Project does not exist");
-  //   require(userProfiles[msg.sender].created == true, "User does not exist");
+  function startProject(uint256 projectId) external {
+    require(projectId > 0 && projectId <= _projectMappingNumber, "Project does not exist");
+    require(userProfiles[msg.sender].created == true, "User does not exist");
 
-  //   userProfiles[msg.sender].currentProject = projectId;
-  // }
+    userProfiles[msg.sender].currentProject = projectId;
+  }
 
   //TODO: Function to set the evaluation, random matching
   function matchmaking(uint projectId) public {
+    require(userProfiles[msg.sender].currentProject == projectId, "User has not started this project");
 
     for (uint i = 0; i < _userArray.length; i++) {
       if (_userArray[i] != msg.sender) {
@@ -250,7 +257,7 @@ contract PeerReview is AccessControl {
 
   function submitEvaluation (
     Evaluations memory evaluationData
-  ) external useRole(EVALUATOR_ROLE) returns(uint) {
+  ) external returns(uint) {
     require(
       isEvaluator(evaluationData.evaluatee, msg.sender),
       'This user not authorized to evaluate the evaluatee.'
