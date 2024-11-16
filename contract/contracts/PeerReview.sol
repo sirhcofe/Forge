@@ -43,13 +43,14 @@ struct Evaluations {
 }
 
 contract PeerReview is AccessControl {
-  bytes public constant EVALUATOR_ROLE = keccak256('EVALUATOR');
-  bytes public constant EVALUATEE_ROLE = keccak256('EVALUATEE');
-  bytes public constant ADMIN_ROLE = keccak256('ADMIN');
-  bytes public constant OWNER_ROLE = keccak256('OWNER');
+  bytes32 public constant EVALUATOR_ROLE = keccak256('EVALUATOR');
+  bytes32 public constant EVALUATEE_ROLE = keccak256('EVALUATEE');
+  bytes32 public constant ADMIN_ROLE = keccak256('ADMIN');
+  bytes32 public constant OWNER_ROLE = keccak256('OWNER');
 
   mapping(uint256 => Project) public projects;
   uint256 private _projectMappingNumber;
+  ISP public spInstance;
 
   address[] private _userArray;
   uint64 private _evaluationSchemaId;
@@ -65,40 +66,55 @@ contract PeerReview is AccessControl {
     _grantRole(ADMIN_ROLE, msg.sender);
   }
 
-  function createNewProject(Project project) external hasRole(OWNER_ROLE) {
-    _projectMappingNumber++;
-    projects[_projectMappingNumber] = project;
+  modifier useRole(bytes32 role) {
+    require (hasRole(role ,msg.sender));
+    _;
   }
 
-  function setSPInstance(address instance) external hasRole(OWNER_ROLE) {
+  function createNewProject(string calldata name, string calldata description) external useRole(OWNER_ROLE) {
+    _projectMappingNumber++;
+    projects[_projectMappingNumber] = Project(name, description);
+  }
+
+  function setSPInstance(address instance) external useRole(OWNER_ROLE) {
     spInstance = ISP(instance);
   }
 
-  function setSchemaID(uint64 schemaId_) external hasRole(OWNER_ROLE) {
-    schemaId = schemaId_;
+  function setSchemaID(uint64 schemaId_) external useRole(OWNER_ROLE) {
+    _evaluationSchemaId = schemaId_;
   }
 
-  function setAdmin(address account) external hasRole(OWNER_ROLE) {
+  function setAdmin(address account) external useRole(OWNER_ROLE) {
     grantRole(ADMIN_ROLE, account);
-    emit AdminAdded(account);
+    // emit AdminAdded(account);
   }
 
-  function transferOwnership(address account) external hasRole(OWNER_ROLE) {
+  function transferOwnership(address account) external useRole(OWNER_ROLE) {
     grantRole(OWNER_ROLE, account);
     revokeRole(OWNER_ROLE, msg.sender);
-    emit AdminAdded(account);
+    // emit AdminAdded(account);
   }
 
   function setEvaluator(address evaluator, address evaluatee) private {
     grantRole(EVALUATOR_ROLE, evaluator);
     grantRole(EVALUATEE_ROLE, evaluatee);
-    evaluatorOf[evaluatee] = evaluator;
+    evaluatorOf[evaluatee].push(evaluator);
   }
 
   function removeEvaluator(address evaluatee) private {
-    address _evaluator = evaluatorOf[evaluatee];
-    evaluatorOf[evaluatee] = address(0);
-    revokeRole(EVALUATOR_ROLE, _evaluator);
+    address[] storage evaluators = evaluatorOf[msg.sender]; // Get the array of evaluators for the sender
+     uint length = evaluators.length;
+
+     // Find the index of the evaluator to remove
+     for (uint i = 0; i < length; i++) {
+         if (evaluators[i] == msg.sender) {
+             // Found the evaluator, now we need to remove it
+             evaluators[i] = evaluators[length - 1]; // Move the last element into the place of the element to remove
+             evaluators.pop(); // Remove the last element (which is now a duplicate)
+             break; // Exit the loop since we've found the evaluator
+         }
+     }
+    revokeRole(EVALUATOR_ROLE, msg.sender);
     revokeRole(EVALUATEE_ROLE, evaluatee);
   }
 
@@ -107,7 +123,7 @@ contract PeerReview is AccessControl {
   }
 
   //TODO: Function to set the evaluation, random matching
-  function matchmaking(address evaluatee) {
+  function matchmaking(address evaluatee) private {
     address[] memory higher_level;
     address[] memory equivalent_level;
     address[] memory lower_level;
@@ -142,8 +158,8 @@ contract PeerReview is AccessControl {
   }
 
   function submitEvaluation(
-    Evaluations evaluationData
-  ) external hasRole(EVALUATOR_ROLE) {
+    Evaluations memory evaluationData
+  ) external useRole(EVALUATOR_ROLE) {
     require(
       msg.sender == evaluatorOf[evaluationData.evaluatee],
       'This user not authorized to evaluate the evaluatee.'
