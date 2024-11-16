@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "title": "Evaluation imminent",
+    "description": "Evaluation found for project NFT Art Gallery",
+    "dismissed": false
+  },
+  {
+    "id": 2,
+    "title": "bla bla bla",
+    "description": "Some random notification here",
+    "dismissed": false
+  }
+]
