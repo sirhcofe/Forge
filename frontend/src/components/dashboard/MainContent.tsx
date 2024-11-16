@@ -28,6 +28,11 @@ const RadarChartComponent = () => {
   };
 
   const options = {
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
     elements: {
       line: {
         borderWidth: 3,
