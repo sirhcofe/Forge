@@ -35,7 +35,7 @@ contract PeerReview is AccessControl {
   mapping(uint256 => Project) public projects;
   uint256 private _projectMappingNumber;
   ISP public spInstance;
-  address[] private _userArray;
+  address[] public _userArray;
   uint64 private _evaluationSchemaId;
   mapping(address => User) public userProfiles;
   mapping (address => address[]) public evaluatorOf;
@@ -86,7 +86,7 @@ contract PeerReview is AccessControl {
 
   function createUser(string memory username) external {
     require(userProfiles[msg.sender].created == false, "User already exists");
-
+    require(bytes(username).length > 0, "Username cannot be empty");
     userProfiles[msg.sender] = User({
       owner:msg.sender,
       username: username,
@@ -95,9 +95,51 @@ contract PeerReview is AccessControl {
       completedProjects: new uint256[](0),
       created: true
     });
-
     _userArray.push(msg.sender);
     emit createUserEvent(msg.sender,username, 0, 0, new uint256[](0), true);
+  }
+
+  function checkProjectExists(uint256 projectId) external view returns (bool) {
+    return projectId <= _projectMappingNumber && projectId > 0;
+  }
+
+  function addUserPoints(address userAddress, uint256 amount) external useRole(ADMIN_ROLE) {
+    require(userProfiles[userAddress].created == true, "User does not exists");
+    userProfiles[userAddress].points += amount;
+  }
+
+  function hasCompletedProject(address userAddress, uint256 projectId) external view returns (bool) {
+    require(userProfiles[userAddress].created == true, "User does not exists");
+    uint256[] memory completedProjects = userProfiles[userAddress].completedProjects;
+    for (uint256 i = 0; i < completedProjects.length; i++) {
+      if (completedProjects[i] == projectId) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function completeProject(address userAddress, uint256 projectId, uint256 amount, bool pass) external useRole(ADMIN_ROLE) {
+    require(userProfiles[userAddress].created == true, "User does not exists");
+    require(userProfiles[userAddress].currentProject == projectId, "Project has not started by this user");
+
+    uint256 score = pass ? amount : 0;
+
+    userProfiles[userAddress].points += score;
+    userProfiles[userAddress].currentProject = 0;
+    if (score > 0) {
+      userProfiles[userAddress].completedProjects.push(projectId);
+      // TODO: emit pass event
+    emit completeProjectEvent(userAddress, projectId, amount);
+    } else {
+      emit failProjectEvent(userAddress, projectId);
+      //TODO: emit fail event
+    }
+  }
+
+  function createNewProject(string calldata name, string calldata description) external useRole(OWNER_ROLE) {
+    _projectMappingNumber++;
+    projects[_projectMappingNumber] = Project(name, description);
   }
 
   function checkProjectExists(uint256 projectId) external view returns (bool) {
@@ -162,10 +204,14 @@ contract PeerReview is AccessControl {
     // emit AdminAdded(account);
   }
 
-  function setEvaluator(address evaluator, address evaluatee) private {
-    grantRole(EVALUATOR_ROLE, evaluator);
-    grantRole(EVALUATEE_ROLE, evaluatee);
+  function setEvaluator(address evaluator, address evaluatee) internal {
+    // grantRole(EVALUATOR_ROLE, evaluator);
+    // grantRole(EVALUATEE_ROLE, evaluatee);
     evaluatorOf[evaluatee].push(evaluator);
+  }
+
+  function getEvaluators(address evaluatee) external view returns ( address[] memory) {
+    return evaluatorOf[evaluatee];
   }
 
   function isEvaluator(address evaluatee, address evaluator) internal view returns (bool) {
@@ -199,15 +245,16 @@ contract PeerReview is AccessControl {
       return uint(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender))) % max;
   }
 
-  // function startProject(uint256 projectId) external {
-  //   require(projectId > 0 && projectId <= _projectMappingNumber, "Project does not exist");
-  //   require(userProfiles[msg.sender].created == true, "User does not exist");
+  function startProject(uint256 projectId) external {
+    require(projectId > 0 && projectId <= _projectMappingNumber, "Project does not exist");
+    require(userProfiles[msg.sender].created == true, "User does not exist");
 
-  //   userProfiles[msg.sender].currentProject = projectId;
-  // }
+    userProfiles[msg.sender].currentProject = projectId;
+  }
 
   //TODO: Function to set the evaluation, random matching
   function matchmaking(uint projectId) public {
+    require(userProfiles[msg.sender].currentProject == projectId, "User has not started this project");
 
     for (uint i = 0; i < _userArray.length; i++) {
       if (_userArray[i] != msg.sender) {
@@ -244,7 +291,7 @@ contract PeerReview is AccessControl {
 
   function submitEvaluation (
     Evaluations memory evaluationData
-  ) external useRole(EVALUATOR_ROLE) returns(uint) {
+  ) external returns(uint) {
     require(
       isEvaluator(evaluationData.evaluatee, msg.sender),
       'This user not authorized to evaluate the evaluatee.'
@@ -271,55 +318,6 @@ contract PeerReview is AccessControl {
     return attestationId;
   }
 }
-
-// function confirmTaskCompletion(
-//     uint256 taskId,
-//     address employeeAddress,
-//     uint256 projectId,
-//     bool completed,
-//     uint256 storypoints
-// ) external onlyManager returns (uint64) {
-//     Task memory task = taskList[taskId];
-//     if (task.assignee == employeeAddress) {
-//         if (task.finished) {
-//             bytes[] memory recipient = new bytes[](1);
-//             recipient[0] = abi.encode(employeeAddress);
-//
-//             // TODO: Change this to parameter
-//             bytes memory data = abi.encode(
-//                 projectId,
-//                 taskId,
-//                 completed,
-//                 storypoints
-//             );
-//
-//             Attestation memory a = Attestation({
-//                 schemaId: schemaId,
-//                 linkedAttestationId: 0,
-//                 attestTimestamp: 0,
-//                 revokeTimestamp: 0,
-//                 attester: address(this),
-//                 validUntil: 0,
-//                 dataLocation: DataLocation.ONCHAIN,
-//                 revoked: false,
-//                 recipients: recipient,
-//                 data: data
-//             });
-//             uint64 attestationId = spInstance.attest(a, "", "", "");
-//             emit TaskCompleted(
-//                 taskId,
-//                 employeeAddress,
-//                 _msgSender(),
-//                 attestationId
-//             );
-//             return attestationId;
-//         } else {
-//             revert TaskNotMarkedCompletedYet();
-//         }
-//     } else {
-//         revert TaskAssigneeAddressMismatch();
-//     }
-// }
 
 //EVENTS
 //create user
