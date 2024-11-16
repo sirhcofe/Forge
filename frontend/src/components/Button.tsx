@@ -38,7 +38,6 @@ const Button = ({
 
   return (
     <motion.button
-      disabled={disabled}
       className={
         `relative py-3 border-2 border-primary-dark text-black inline-block rounded-2xl overflow-hidden bg-foreground ` +
         className
@@ -46,6 +45,7 @@ const Button = ({
       onClick={(e) => handleClick(e)}
       onHoverStart={() => !clicked && setHovered(true)}
       onHoverEnd={() => !clicked && setHovered(false)}
+      disabled={disabled}
     >
       <motion.div
         style={{ height: "100%" }}

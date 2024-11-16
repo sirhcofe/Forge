@@ -1,30 +1,31 @@
-import { usePrivy } from "@privy-io/react-auth";
+import { useEffect, useState } from "react";
 import Dashboard from "./components/dashboard/Dashboard";
-import Button from "./components/Button";
-
-
-function LoginPanel() {
-  const { ready, authenticated, login } = usePrivy();
-  // Disable login when Privy is not ready or the user is already authenticated
-  const disableLogin = !ready || (ready && authenticated);
-
-  return (
-    <div className="w-screen h-screen absolute top-0 left-0 backdrop-blur-sm bg-background">
-      <Button className="w-full" disabled={disableLogin} onClick={login}>
-        Get Started
-      </Button>
-    </div>
-
-  );
-}
+import Landing from "./components/landing/Landing";
+import { useWeb3Auth } from "./hooks/useWeb3Auth";
+import { AnimatePresence } from "framer-motion";
 
 function App() {
-  const { authenticated } = usePrivy();
+  const { isLoading, user } = useWeb3Auth();
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading) {
+      const timeout = setTimeout(() => {
+        setReady(true);
+      }, 1000);
+      return () => clearTimeout(timeout);
+    }
+  }, [isLoading]);
 
   return (
-    <div className="w-screen min-h-screen h-fit bg-background">
-      {!authenticated ? <LoginPanel /> : <Dashboard />}
-      {/* <Dashboard /> */}
+    <div className="relative w-screen min-h-screen h-fit bg-background">
+      <AnimatePresence>
+        {ready && user ? (
+          <Dashboard key="Dashboard" />
+        ) : (
+          <Landing key="Landing" ready={ready} user={user} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
