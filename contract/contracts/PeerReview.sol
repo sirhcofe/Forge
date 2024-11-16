@@ -37,7 +37,7 @@ contract PeerReview is AccessControl {
   bytes32 public constant OWNER_ROLE = keccak256('OWNER');
   uint64 private _evaluatorSchemaId; // You'll need to set this in constructor
 
-  mapping(address => mapping(address => uint256)) public evaluatorAttestationIds;
+  mapping(address => mapping(address => uint64)) public evaluatorAttestationIds;
   mapping(uint256 => Project) public projects;
   uint256 private _projectMappingNumber;
   ISP public spInstance;
@@ -212,7 +212,7 @@ contract PeerReview is AccessControl {
     });
 
     // Submit the attestation
-    uint256 attestationId = spInstance.attest(attestation, "", "", "");
+    uint64 attestationId = spInstance.attest(attestation, "", "", "");
     evaluatorAttestationIds[evaluator][evaluatee] = attestationId;
   }
 
@@ -303,7 +303,7 @@ contract PeerReview is AccessControl {
     //   'This user not authorized to evaluate the evaluatee.'
     // );
     // Get the attestation ID for this evaluator-evaluatee pair
-    uint256 evalAttestationId = evaluatorAttestationIds[msg.sender][evaluationData.evaluatee];
+    uint64 evalAttestationId = evaluatorAttestationIds[msg.sender][evaluationData.evaluatee];
     require(evalAttestationId != 0, "No evaluator attestation found");
     
     // Get the attestation from SignProtocol
