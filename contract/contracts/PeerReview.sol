@@ -46,7 +46,7 @@ contract PeerReview is AccessControl {
   event createEvaluatorOfEvent(address user, uint projectId, address[] evaluators);
   event completeProjectEvent(address user, uint projectId, uint amount);
   event submitAttestationEvent(address evaluatee, uint projectId, uint score, string evaluationFeedback);
-   
+
 
   struct User {
     string username;
@@ -91,20 +91,30 @@ contract PeerReview is AccessControl {
     });
   }
 
+  function checkProjectExists(uint256 projectId) external returns (bool) {
+    return projectId <= _projectMappingNumber && projectId > 0;
+  }
+
   function addUserPoints(address userAddress, uint256 amount) external useRole(ADMIN_ROLE) {
     require(userProfiles[userAddress].created == true, "User does not exists");
     userProfiles[userAddress].points += amount;
   }
 
-  function completeProject(address userAddress, uint256 projectId, uint256 amount) external useRole(ADMIN_ROLE) {
+  function completeProject(address userAddress, uint256 projectId, uint256 amount, bool pass) external useRole(ADMIN_ROLE) {
     require(userProfiles[userAddress].created == true, "User does not exists");
     require(userProfiles[userAddress].currentProject == projectId, "Project has not started by this user");
-    
-    userProfiles[userAddress].points += amount;
-    userProfiles[userAddress].completedProjects.push(projectId);
-    userProfiles[userAddress].currentProject = 0;
 
+    uint256 score = pass ? amount : 0;
+
+    userProfiles[userAddress].points += score;
+    userProfiles[userAddress].currentProject = 0;
+    if (score > 0) {
+      userProfiles[userAddress].completedProjects.push(projectId);
+      // TODO: emit pass event
     emit completeProjectEvent(userAddress, projectId, amount);
+    } else {
+      //TODO: emit fail event
+    }
   }
 
   // function createNewProject(string calldata name, string calldata description) external useRole(OWNER_ROLE) {
@@ -160,14 +170,14 @@ contract PeerReview is AccessControl {
 
   // function startProject(uint256 projectId) external {
   //   require(projectId > 0 && projectId <= _projectMappingNumber, "Project does not exist");
-  //   require(userProfiles[msg.sender].created == true, "User does not exist"); 
+  //   require(userProfiles[msg.sender].created == true, "User does not exist");
 
   //   userProfiles[msg.sender].currentProject = projectId;
   // }
 
   //TODO: Function to set the evaluation, random matching
   function matchmaking(uint projectId) public {
-    
+
     for (uint i = 0; i < _userArray.length; i++) {
       if (_userArray[i] != msg.sender) {
         uint evaluator_points = userProfiles[_userArray[i]].points;
@@ -225,7 +235,7 @@ contract PeerReview is AccessControl {
       recipients: recipients,
       data: encodedEvaluationData
     });
-    uint256 attestationId = spInstance.attest(attestation, "", "", ""); 
+    uint256 attestationId = spInstance.attest(attestation, "", "", "");
     emit submitAttestationEvent(evaluationData.evaluatee, projectId, evaluationData.score, evaluationData.evaluationFeedback);
     return attestationId;
   }
