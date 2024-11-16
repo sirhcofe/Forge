@@ -1,113 +1,63 @@
+import { BigInt } from "@graphprotocol/graph-ts"
 import {
-  RoleAdminChanged as RoleAdminChangedEvent,
-  RoleGranted as RoleGrantedEvent,
-  RoleRevoked as RoleRevokedEvent,
-  completeProjectEvent as completeProjectEventEvent,
-  createEvaluatorOfEvent as createEvaluatorOfEventEvent,
-  submitAttestationEvent as submitAttestationEventEvent
-} from "../generated/PeerReview/PeerReview"
-import {
-  RoleAdminChanged,
-  RoleGranted,
-  RoleRevoked,
+  PeerReview, 
   completeProjectEvent,
   createEvaluatorOfEvent,
+  createUserEvent,
+  failProjectEvent,
   submitAttestationEvent
-} from "../generated/schema"
+} from "../generated/PeerReview/PeerReview"
+import { User, Evaluation } from "../generated/schema"
 
-export function handleRoleAdminChanged(event: RoleAdminChangedEvent): void {
-  let entity = new RoleAdminChanged(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.role = event.params.role
-  entity.previousAdminRole = event.params.previousAdminRole
-  entity.newAdminRole = event.params.newAdminRole
-
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
-}
-
-export function handleRoleGranted(event: RoleGrantedEvent): void {
-  let entity = new RoleGranted(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.role = event.params.role
-  entity.account = event.params.account
-  entity.sender = event.params.sender
-
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
-}
-
-export function handleRoleRevoked(event: RoleRevokedEvent): void {
-  let entity = new RoleRevoked(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.role = event.params.role
-  entity.account = event.params.account
-  entity.sender = event.params.sender
-
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
-}
-
-export function handlecompleteProjectEvent(
-  event: completeProjectEventEvent
-): void {
-  let entity = new completeProjectEvent(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.user = event.params.user
-  entity.projectId = event.params.projectId
-  entity.amount = event.params.amount
-
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
+export function handlecompleteProjectEvent(event: completeProjectEvent): void {
+  let entity = User.load(event.params.user)!;
+  entity.completedProject.push(event.params.projectId)
+  entity.currentProject =  BigInt.fromI32(0);
+  entity.evaluation = []
+  entity.points = entity.points + event.params.amount
   entity.save()
 }
 
 export function handlecreateEvaluatorOfEvent(
-  event: createEvaluatorOfEventEvent
+  event: createEvaluatorOfEvent
 ): void {
-  let entity = new createEvaluatorOfEvent(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.user = event.params.user
-  entity.projectId = event.params.projectId
-  entity.evaluators = event.params.evaluators
+  for (let i = 0; i < event.params.evaluators.length; i++) {
+    let entity = new Evaluation(event.params.user.concat(event.params.evaluators[i]))
+    let evaluatee = User.load(event.params.user)!
+    let evaluator = User.load(event.params.evaluators[i])!
+    entity.evaluatee = evaluatee.id
+    entity.evaluator = evaluator.id
+    entity.projectId = event.params.projectId 
+    entity.save()
+  }
+}
 
-  entity.blockNumber = event.block.number
+export function handlecreateUserEvent(event: createUserEvent): void {
+  let entity = User.load(event.params.owner)
+  if (entity == null)
+    entity = new User(
+      event.params.owner)
+  
+  entity.username = event.params.username;
+  entity.points = event.params.points;
+  entity.currentProject = event.params.currentProject;
+  entity.completedProject = [];
   entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
+  entity.save()
+}
 
+export function handlefailProjectEvent(event: failProjectEvent): void {
+  let entity = User.load(event.params.userAddress)!
+  entity.currentProject = BigInt.fromI32(0);
+  entity.evaluation = []
   entity.save()
 }
 
 export function handlesubmitAttestationEvent(
-  event: submitAttestationEventEvent
+  event: submitAttestationEvent
 ): void {
-  let entity = new submitAttestationEvent(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.evaluatee = event.params.evaluatee
-  entity.projectId = event.params.projectId
-  entity.score = event.params.score
-  entity.evaluationFeedback = event.params.evaluationFeedback
-
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
+  let entity = Evaluation.load(event.params.evaluator.concat(event.params.evaluatee))!
+  entity.score = event.params.score;
+  entity.blockTimeStamp = event.block.timestamp; 
   entity.save()
 }

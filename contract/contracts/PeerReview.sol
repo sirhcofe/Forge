@@ -45,13 +45,14 @@ contract PeerReview is AccessControl {
 
 
   event failProjectEvent(address userAddress, uint projectId);
-  event createUserEvent(string username, uint points, uint currentProject, uint[] completedProjects, bool created);
+  event createUserEvent(address owner, string username, uint points, uint currentProject, uint[] completedProjects, bool created);
   event createEvaluatorOfEvent(address user, uint projectId, address[] evaluators);
   event completeProjectEvent(address user, uint projectId, uint amount);
-  event submitAttestationEvent(address evaluatee, uint projectId, uint score, string evaluationFeedback);
+  event submitAttestationEvent(address evaluator, address evaluatee, uint projectId, uint score, string evaluationFeedback);
 
 
   struct User {
+    address owner;
     string username;
     uint256 points;
     uint256 currentProject;
@@ -87,6 +88,7 @@ contract PeerReview is AccessControl {
     require(userProfiles[msg.sender].created == false, "User already exists");
     require(bytes(username).length > 0, "Username cannot be empty");
     userProfiles[msg.sender] = User({
+      owner:msg.sender,
       username: username,
       points: 0,
       currentProject: 0,
@@ -94,7 +96,7 @@ contract PeerReview is AccessControl {
       created: true
     });
     _userArray.push(msg.sender);
-    emit createUserEvent(username, 0, 0, new uint256[](0), true);
+    emit createUserEvent(msg.sender,username, 0, 0, new uint256[](0), true);
   }
 
   function checkProjectExists(uint256 projectId) external view returns (bool) {
@@ -280,7 +282,7 @@ contract PeerReview is AccessControl {
       data: encodedEvaluationData
     });
     uint256 attestationId = spInstance.attest(attestation, "", "", "");
-    emit submitAttestationEvent(evaluationData.evaluatee, projectId, evaluationData.score, evaluationData.evaluationFeedback);
+    emit submitAttestationEvent(msg.sender, evaluationData.evaluatee, projectId, evaluationData.score, evaluationData.evaluationFeedback);
     return attestationId;
   }
 }

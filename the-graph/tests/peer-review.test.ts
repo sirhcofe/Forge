@@ -5,10 +5,10 @@ import {
   clearStore,
   beforeAll,
   afterAll
-} from "matchstick-as"
+} from "matchstick-as/assembly/index"
 import { Bytes, Address, BigInt } from "@graphprotocol/graph-ts"
-import { RoleAdminChanged } from "../generated/schema"
-import { RoleAdminChanged as RoleAdminChangedEvent } from "../generated/PeerReview/PeerReview"
+import { ExampleEntity } from "../generated/schema"
+import { RoleAdminChanged } from "../generated/PeerReview/PeerReview"
 import { handleRoleAdminChanged } from "../src/peer-review"
 import { createRoleAdminChangedEvent } from "./peer-review-utils"
 
@@ -35,25 +35,25 @@ describe("Describe entity assertions", () => {
   // For more test scenarios, see:
   // https://thegraph.com/docs/en/developer/matchstick/#write-a-unit-test
 
-  test("RoleAdminChanged created and stored", () => {
-    assert.entityCount("RoleAdminChanged", 1)
+  test("ExampleEntity created and stored", () => {
+    assert.entityCount("ExampleEntity", 1)
 
     // 0xa16081f360e3847006db660bae1c6d1b2e17ec2a is the default address used in newMockEvent() function
     assert.fieldEquals(
-      "RoleAdminChanged",
-      "0xa16081f360e3847006db660bae1c6d1b2e17ec2a-1",
+      "ExampleEntity",
+      "0xa16081f360e3847006db660bae1c6d1b2e17ec2a",
       "role",
       "1234567890"
     )
     assert.fieldEquals(
-      "RoleAdminChanged",
-      "0xa16081f360e3847006db660bae1c6d1b2e17ec2a-1",
+      "ExampleEntity",
+      "0xa16081f360e3847006db660bae1c6d1b2e17ec2a",
       "previousAdminRole",
       "1234567890"
     )
     assert.fieldEquals(
-      "RoleAdminChanged",
-      "0xa16081f360e3847006db660bae1c6d1b2e17ec2a-1",
+      "ExampleEntity",
+      "0xa16081f360e3847006db660bae1c6d1b2e17ec2a",
       "newAdminRole",
       "1234567890"
     )

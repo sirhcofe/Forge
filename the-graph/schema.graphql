@@ -1,44 +1,22 @@
-
-type RoleAdminChanged @entity(immutable: true) {
+type User @entity {
   id: Bytes!
-  role: Bytes! # bytes32
-  previousAdminRole: Bytes! # bytes32
-  newAdminRole: Bytes! # bytes32
-  blockNumber: BigInt!
+  owner: Bytes!
+  username: String!
+  points:BigInt!
+  currentProject:BigInt!
+  completedProject:[BigInt!]!
+  evaluated:[Evaluation!]! @derivedFrom(field:"evaluatee")
+  evaluation:[Evaluation!]!
   blockTimestamp: BigInt!
-  transactionHash: Bytes!
 }
 
-
-
-
-type completeProjectEvent @entity(immutable: true) {
-  id: Bytes!
-  user: Bytes! # address
-  projectId: BigInt! # uint256
-  amount: BigInt! # uint256
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+type Evaluation @entity {
+  id:Bytes!
+  evaluator:User!
+  score:BigInt!
+  evaluationFeedback:String!
+  projectId:BigInt!
+  evaluatee:User!
+  blockTimeStamp: BigInt!
 }
 
-type createEvaluatorOfEvent @entity(immutable: true) {
-  id: Bytes!
-  user: Bytes! # address
-  projectId: BigInt! # uint256
-  evaluators: [Bytes!]! # address[]
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type submitAttestationEvent @entity(immutable: true) {
-  id: Bytes!
-  evaluatee: Bytes! # address
-  projectId: BigInt! # uint256
-  score: BigInt! # uint256
-  evaluationFeedback: String! # string
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}

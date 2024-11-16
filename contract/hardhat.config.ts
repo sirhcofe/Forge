@@ -1,5 +1,7 @@
 import type { HardhatUserConfig } from "hardhat/config";
+import "@nomicfoundation/hardhat-web3-v4";
 import "@nomicfoundation/hardhat-toolbox-viem";
+
 require("dotenv").config()
 
 const preconf = {
