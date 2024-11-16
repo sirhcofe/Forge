@@ -1,20 +1,60 @@
 import { useState } from "react";
 import Button from "../Button";
 import { LuTimer } from "react-icons/lu";
+import { encodeFunctionData, parseAbi } from "viem";
+import { useWeb3Auth } from "@/hooks/useWeb3Auth";
+import test from "./test.json";
+import { PaymasterMode, UserOpResponse } from "@biconomy/account";
 
 const NoEval = () => {
+  const { smartWallet, viemPublicClient } = useWeb3Auth();
+
+  const handleClick = async () => {
+    console.log("clicked!");
+    const encodedCall = encodeFunctionData({
+      abi: parseAbi(["function store(uint256)"]),
+      functionName: "store",
+      args: [BigInt(123)],
+    });
+    console.log(smartWallet);
+
+    // const hash = await smartWallet.sendTransaction({
+    //   to: "0x201abe53460c1a1076d4aeb2f4677c691c0dc81e",
+    //   value: "0x0",
+    //   data: encodedCall,
+    //   //   maxPriorityFeePerGas: "5000000000", // Max priority fee per gas
+    //   //   maxFeePerGas: "60000000000", // Max fee per gas
+    // });
+    // const receipt = await viemPublicClient!.waitForTransactionReceipt({ hash });
+    // console.log(receipt);
+
+    /** The following is when using Biconomy smart wallet **/
+    const tx = {
+      to: "0x201abe53460c1a1076d4aeb2f4677c691c0dc81e",
+      data: encodedCall,
+    };
+
+    const { waitForTxHash } = (await smartWallet?.sendTransaction(tx, {
+      paymasterServiceData: { mode: PaymasterMode.SPONSORED },
+    })) as UserOpResponse;
+    const { transactionHash, userOperationReceipt } = await waitForTxHash();
+    console.log("tx", transactionHash);
+  };
+
   return (
     <div className="w-full h-full flex flex-col">
       <div className="flex flex-col flex-1 items-center justify-center">
         <p className="px-3 text-sm">No scheduled evaluations!</p>
       </div>
-      <Button className="mt-auto">Eval a project</Button>
+
+      <Button className="mt-auto" onClick={handleClick}>
+        Eval a project
+      </Button>
     </div>
   );
 };
 
 const CurrentEval = ({ currentEval }: { currentEval: any }) => {
-  console.log(currentEval);
   return (
     <div className="w-full h-full flex flex-col">
       {currentEval.map((evall: any, index: number) => {
@@ -40,11 +80,7 @@ const CurrentEval = ({ currentEval }: { currentEval: any }) => {
               <div className="w-full flex items-center px-3 gap-x-1">
                 <LuTimer />
                 <p className="flex flex-1">3h</p>
-                <Button
-                  className="text-sm !py-1 !px-6 !mr-8"
-                  onClick={() => null}
-                  small
-                >
+                <Button className="text-sm !py-1 !px-6 !mr-8" small>
                   Contact
                 </Button>
               </div>
