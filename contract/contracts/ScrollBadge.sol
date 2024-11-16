@@ -2,12 +2,14 @@
 
 pragma solidity 0.8.19;
 
-import {Attestation} from "@eas/contracts/IEAS.sol";
+// import {Attestation} from "@eas/contracts/IEAS.sol";
 
-import {decodeBadgeData} from "../Common.sol";
-import {IScrollBadge} from "../interfaces/IScrollBadge.sol";
-import {IScrollBadgeResolver} from "../interfaces/IScrollBadgeResolver.sol";
-import {AttestationBadgeMismatch, Unauthorized} from "../Errors.sol";
+import {Attestation} from '@ethereum-attestation-service/eas-contracts/contracts/IEAS.sol';
+
+import {decodeBadgeData} from "./Common.sol";
+import {IScrollBadge} from "./IScrollBadge.sol";
+import {IScrollBadgeResolver} from "./IScrollBadgeResolver.sol";
+import {AttestationBadgeMismatch, Unauthorized} from "./Errors.sol";
 
 /// @title ScrollBadge
 /// @notice This contract implements the basic functionalities of a Scroll badge.
