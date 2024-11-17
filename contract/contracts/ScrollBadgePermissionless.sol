@@ -32,9 +32,9 @@ contract ScrollBadgePermissionless is
   constructor(
     address resolver_,
     string memory _defaultBadgeURI,
-    address contractAddress
+    address peerContract
   ) ScrollBadge(resolver_) ScrollBadgeDefaultURI(_defaultBadgeURI) {
-    contractAddress = contractAddress;
+    contractAddress = peerContract;
   }
 
   /// @inheritdoc ScrollBadge
@@ -68,3 +68,4 @@ contract ScrollBadgePermissionless is
     return super.onRevokeBadge(attestation);
   }
 }
+

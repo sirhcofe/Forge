@@ -14,7 +14,7 @@ if (!resolverAddress) {
 }
 
 const reviewSchemaHookModule = buildModule("ScrollBadgePermissionless", (m) => {
-  const reviewSchemaHook = m.contract("ScrollBadgePermissionless", [process.env.SCROLL_SEPOLIA_BADGE_RESOLVER_ADDRESS, "http://www.example.com/animal/actor.html"]);
+  const reviewSchemaHook = m.contract("ScrollBadgePermissionless", [process.env.SCROLL_SEPOLIA_BADGE_RESOLVER_ADDRESS, "http://www.example.com/animal/actor.html", process.env.CONTRACT_ADDRESS]);
 
   return { reviewSchemaHook };
 });
