@@ -5,32 +5,30 @@ import { encodeFunctionData, parseAbi } from "viem";
 import { useWeb3Auth } from "@/hooks/useWeb3Auth";
 import test from "./test.json";
 import { PaymasterMode, UserOpResponse } from "@biconomy/account";
+import { Chat } from "@pushprotocol/restapi/src/lib/pushapi/chat";
+import ChatModal from "../ChatModal";
+import evals from "./evals.json";
 
 const NoEval = () => {
-  const { smartWallet, viemPublicClient } = useWeb3Auth();
+  const { smartWallet, viemPublicClient, user } = useWeb3Auth();
 
   const handleClick = async () => {
-    console.log("clicked!");
-    const encodedCall = encodeFunctionData({
-      abi: parseAbi(["function store(uint256)"]),
-      functionName: "store",
-      args: [BigInt(123)],
-    });
-    console.log(smartWallet);
 
-    // const hash = await smartWallet.sendTransaction({
-    //   to: "0x201abe53460c1a1076d4aeb2f4677c691c0dc81e",
-    //   value: "0x0",
-    //   data: encodedCall,
-    //   //   maxPriorityFeePerGas: "5000000000", // Max priority fee per gas
-    //   //   maxFeePerGas: "60000000000", // Max fee per gas
-    // });
-    // const receipt = await viemPublicClient!.waitForTransactionReceipt({ hash });
-    // console.log(receipt);
+    const data = {
+      projectId: BigInt(1),
+      score: BigInt(50),
+      evaluatee: user?.address || "0x0",
+      evaluationFeedback: "Great job!",
+    }
+    const encodedCall = encodeFunctionData({
+      abi: parseAbi(["function submitEvaluation(Evaluations memory evaluationData) external returns (uint256)", "struct Evaluations { uint256 projectId; uint256 score; address evaluatee; string evaluationFeedback;}"]),
+      functionName: "submitEvaluation",
+      args: [data],
+    });
 
     /** The following is when using Biconomy smart wallet **/
     const tx = {
-      to: "0x201abe53460c1a1076d4aeb2f4677c691c0dc81e",
+      to: import.meta.env.VITE_SMART_CONTRACT_ADDR,
       data: encodedCall,
     };
 
@@ -55,6 +53,8 @@ const NoEval = () => {
 };
 
 const CurrentEval = ({ currentEval }: { currentEval: any }) => {
+  const [isOpened, setIsOpened] = useState(false);
+
   return (
     <div className="w-full h-full flex flex-col">
       {currentEval.map((evall: any, index: number) => {
@@ -62,11 +62,10 @@ const CurrentEval = ({ currentEval }: { currentEval: any }) => {
           <>
             {index ? <div className="w-full h-[1px] bg-black/50" /> : null}
             <div
-              className={`flex flex-col my-1 py-1 gap-y-1 ${
-                evall.evalOthers
-                  ? "bg-gradient-to-r from-primary-light to-transparent to-10%"
-                  : "bg-gradient-to-l from-accent to-transparent to-10%"
-              }`}
+              className={`flex flex-col my-1 py-1 gap-y-1 ${evall.evalOthers
+                ? "bg-gradient-to-r from-primary-light to-transparent to-10%"
+                : "bg-gradient-to-l from-accent to-transparent to-10%"
+                }`}
             >
               {evall.evalOthers ? (
                 <p className="w-full px-3 text-sm" key={index}>
@@ -80,10 +79,11 @@ const CurrentEval = ({ currentEval }: { currentEval: any }) => {
               <div className="w-full flex items-center px-3 gap-x-1">
                 <LuTimer />
                 <p className="flex flex-1">3h</p>
-                <Button className="text-sm !py-1 !px-6 !mr-8" small>
-                  Contact
+                <Button className="text-sm !py-1 !px-6 !mr-8" small onClick={() => setIsOpened(true)}>
+                  More
                 </Button>
               </div>
+              <ChatModal isOpen={isOpened} setOpen={setIsOpened} />
             </div>
           </>
         );
@@ -110,6 +110,7 @@ const Evaluations = () => {
         },
       ]);
   };
+
 
   return (
     <div className="relative w-full h-full flex flex-col">

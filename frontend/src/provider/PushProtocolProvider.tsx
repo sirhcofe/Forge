@@ -3,83 +3,79 @@ import React, { createContext, useEffect } from 'react'
 
 import toast from 'react-hot-toast';
 import { useWeb3Auth } from '@/hooks/useWeb3Auth';
+import { privateKeyToAccount } from 'viem/accounts';
+import { createWalletClient, http } from 'viem';
+import { sepolia } from 'viem/chains';
+import { AppDataContext } from '@/components/DataProviders';
 
 export const PushProtocolContext = createContext({});
 
 const PushProtocolProvider = ({ children }: { children: React.ReactNode }) => {
-  const { viemWalletClient } = useWeb3Auth();
-  const [pushInstance, setPushInstance] = React.useState<PushAPI | null>(null);
-  const [chatInstance, setChatInstance] = useState(null);
+    const { pushWalletClient } = useWeb3Auth();
+    const [pushInstance, setPushInstance] = React.useState<PushAPI | null>(null);
+    const [chatInstance, setChatInstance] = React.useState<any>(null);
+    const appData = React.useContext(AppDataContext);
 
 
-  useEffect(() => {
-    (async () => {
-      console.log(viemWalletClient)
-      if (!viemWalletClient || !viemWalletClient.account) return;
-      console.log(viemWalletClient.account.address)
-      const pushUser = await PushAPI.initialize(viemWalletClient, {
-        env: CONSTANTS.ENV.STAGING,
-      });
-      setPushInstance(pushUser);
-      setChatInstance(pushUser.chat);
+    useEffect(() => {
+        (async () => {
+            // console.log(viemWalletClient, viemPublicClient)
+            if (!pushWalletClient || !pushWalletClient.account) return;
+            console.log(pushWalletClient.account.address, "PUSH PROC INIT!!!")
+            const account = privateKeyToAccount('0x9c8ffffc7b4cc95172b2a7b84792d2138e359f1075ac510f4cffa6fb5904a27a')
 
-      // To listen to real time notifications
-      const stream = await pushUser.initStream([CONSTANTS.STREAM.NOTIF]);
+            const client = createWalletClient({
+                account,
+                chain: sepolia,
+                transport: http()
+            })
+            const pushAdmin = await PushAPI.initialize(client, {
+                env: CONSTANTS.ENV.STAGING,
+            });
+            setPushInstance(pushAdmin);
 
-      // Setup event handling
-      stream.on(CONSTANTS.STREAM.NOTIF, (data) => {
-        console.log(data);
-        toast(data);
-      });
 
-      // Connect stream but only after setting all event handling
-      stream.connect();
-    })();
-  }, [viemWalletClient, viemWalletClient?.account]);
-  // Chat functionality
-  const sendMessage = async (recipient, content) => {
-    if (!chatInstance) return;
-    return await chatInstance.send(recipient, {
-      content,
-      type: 'Text',
-    });
-  };
 
-  const acceptChatRequest = async (requester) => {
-    if (!chatInstance) return;
-    return await chatInstance.accept(requester);
-  };
+            const pushUser = await PushAPI.initialize(pushWalletClient as any, {
+                env: CONSTANTS.ENV.STAGING,
+            });
+            setChatInstance(pushUser.chat);
 
-  const rejectChatRequest = async (requester) => {
-    if (!chatInstance) return;
-    return await chatInstance.reject(requester);
-  };
+            // // userAlice.notification.subscribe(channel, {settings?})
+            // const response = await pushUser.notification.subscribe(
+            //     `eip155:11155111:${"0x6Ce9b4B77977BAd7BeFBDf0793aa1ba48F6f8706"}`
+            // );
+            // console.log(response);
+            // To listen to real time notifications
+            const stream = await pushUser.initStream([CONSTANTS.STREAM.NOTIF, CONSTANTS.STREAM.CHAT]);
 
-  const getChatHistory = async (chatPartner) => {
-    if (!chatInstance) return;
-    return await chatInstance.history(chatPartner);
-  };
+            // Setup event handling
+            stream.on(CONSTANTS.STREAM.NOTIF, (data) => {
+                console.log(data);
+                toast(data.message.payload.body);
+            });
 
-  const getLatestChat = async (chatPartner) => {
-    if (!chatInstance) return;
-    return await chatInstance.latest(chatPartner);
-  };
+            // Chat message received:
+            stream.on(CONSTANTS.STREAM.CHAT, (message) => {
+                console.log('Encrypted Message Received');
+                console.log(message); // Log the message payload
+            });
 
-  const listChats = async () => {
-    if (!chatInstance) return;
-    return await chatInstance.list('CHATS');
-  };
+            // Connect stream but only after setting all event handling
+            stream.connect();
+            setTimeout(() => {
+                toast("connected to push protocol")
+            }, 3000)
+        })();
+    }, [pushWalletClient, pushWalletClient?.account]);
 
-  const listRequests = async () => {
-    if (!chatInstance) return;
-    return await chatInstance.list('REQUESTS');
-  };
 
-  return (
-    <PushProtocolContext.Provider value={{ pushInstance, chatInstance, sendMessage, acceptChatRequest, rejectChatRequest, getChatHistory, getLatestChat, listChats, listRequests, }}>
-      {children}
-    </PushProtocolContext.Provider>
-  )
+
+    return (
+        <PushProtocolContext.Provider value={{ pushInstance, chatInstance }}>
+            {children}
+        </PushProtocolContext.Provider>
+    )
 }
 
 export default PushProtocolProvider
