@@ -52,13 +52,19 @@ const PushProtocolProvider = ({ children }: { children: React.ReactNode }) => {
             // Setup event handling
             stream.on(CONSTANTS.STREAM.NOTIF, (data) => {
                 console.log(data);
-                toast(data.message.payload.body);
+                // toast(data.message.payload.body);
             });
 
             // Chat message received:
             stream.on(CONSTANTS.STREAM.CHAT, (message) => {
                 console.log('Encrypted Message Received');
                 console.log(message); // Log the message payload
+                appData!.setChats!((prevChats) => {
+                    return [
+                        ...(prevChats),
+                        { message: message.payload.body, sender: message.sender },
+                    ]
+                })
             });
 
             // Connect stream but only after setting all event handling

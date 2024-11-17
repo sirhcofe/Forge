@@ -26,7 +26,8 @@ const ProjectListModal = ({ isOpen, setOpen }: { isOpen: boolean; setOpen: (open
     });
 
     try {
-      await sendTransaction(encodedCall);
+      if (import.meta.env.VITE_DEMO !== 'true')
+        await sendTransaction(encodedCall);
       if (appData && appData.setSelectedProject) appData.setSelectedProject(project);
       setOpen(false);
 
@@ -43,6 +44,7 @@ const ProjectListModal = ({ isOpen, setOpen }: { isOpen: boolean; setOpen: (open
         <Dialog.Content>
           <Card className="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-[450px] -translate-x-1/2 -translate-y-1/2 rounded-xl overflow-y-auto z-10 p-4" corner={false} layout={
             <div>
+              <h2>Evaluations</h2>
               {appData?.projects.map((project, index) => (
                 <div className="w-full h-full py-5 flex flex-col" key={index}>
                   <div className="flex flex-col border border-tertiary rounded-2xl gap-y-2 overflow-hidden pb-2">

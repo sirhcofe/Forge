@@ -15,6 +15,8 @@ export interface ChatMessage {
     sender: string;
 }
 
+interface Data {
+}
 // Define the data context
 interface AppDataContext {
     // Define your data properties here
@@ -26,6 +28,9 @@ interface AppDataContext {
     setSelectedProject?: (project: Project) => void;
     chats: ChatMessage[];
     setChats?: (chats: ChatMessage[]) => void;
+    currentStep: 'start' | 'submit' | 'eval' | 'evalsheet' | 'complete'
+    setCurrentStep: (step: 'start' | 'submit' | 'eval' | 'evalsheet' | 'complete') => void;
+
 }
 
 // Create the data context
@@ -41,6 +46,7 @@ const appData = {
 export const AppDataProvider = ({ children }: any) => {
     const [selectedProject, setSelectedProject] = useState<Project | undefined>(undefined);
     const [chats, setChats] = useState<ChatMessage[]>([]);
+    const [currentStep, setCurrentStep] = useState<'start' | 'submit' | 'complete'>('start');
 
     return (
         <AppDataContext.Provider value={{
@@ -48,7 +54,9 @@ export const AppDataProvider = ({ children }: any) => {
             selectedProject,
             setSelectedProject,
             chats,
-            setChats
+            setChats,
+            currentStep,
+            setCurrentStep
         }}>
             {children}
         </AppDataContext.Provider>

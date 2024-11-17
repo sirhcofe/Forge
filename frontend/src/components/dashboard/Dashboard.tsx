@@ -9,9 +9,11 @@ import Projects from "./Projects";
 import ProjectsHistory from "./ProjectHistory";
 import { useWeb3Auth } from "@/hooks/useWeb3Auth";
 import { motion } from "framer-motion";
+import { useEffect } from "react";
 
 const Dashboard = () => {
   const { logout } = useWeb3Auth();
+
   return (
     <motion.div className="w-full min-h-screen max-h-screen bg-background-dark grid grid-cols-[repeat(11,minmax(0,1fr))] grid-rows-[repeat(10,minmax(0,1fr))] gap-3 p-4">
       <Card

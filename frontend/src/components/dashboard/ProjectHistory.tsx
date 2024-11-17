@@ -1,9 +1,11 @@
 import { ProjectHistoryType } from "@/types/project-history";
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import bgImg from "@/../public/devcon.jpg";
 import { format } from "date-fns";
+import { AppDataContext } from "../DataProviders";
 
 const ProjectsHistory = () => {
+  const appData = useContext(AppDataContext);
   const [projectHistory, setProjectHistory] = useState<
     ProjectHistoryType[] | undefined
   >([
@@ -30,6 +32,24 @@ const ProjectsHistory = () => {
       ],
     },
   ]);
+
+  useEffect(() => {
+    if (appData?.currentStep === "complete") {
+      setProjectHistory([...projectHistory!, {
+        projectTItle: appData.selectedProject?.title || "DeFi Dashboard",
+        attempts: [
+          {
+            score: 100,
+            date: 1731736588,
+          },
+          {
+            score: 0,
+            date: 1731726588,
+          },
+        ],
+      },])
+    }
+  }, [appData?.currentStep]);
 
   return (
     <div className="relative w-full h-full flex flex-col">

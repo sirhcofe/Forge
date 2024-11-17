@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import Button from "../Button";
 import { LuTimer } from "react-icons/lu";
 import { encodeFunctionData, parseAbi } from "viem";
@@ -8,35 +8,37 @@ import { PaymasterMode, UserOpResponse } from "@biconomy/account";
 import { Chat } from "@pushprotocol/restapi/src/lib/pushapi/chat";
 import ChatModal from "../ChatModal";
 import evals from "./evals.json";
+import { AppDataContext } from "../DataProviders";
+import EvaluationModal from "../EvaluationModal";
 
 const NoEval = () => {
-  const { smartWallet, viemPublicClient, user } = useWeb3Auth();
+  // const { smartWallet, viemPublicClient, user } = useWeb3Auth();
 
   const handleClick = async () => {
 
-    const data = {
-      projectId: BigInt(1),
-      score: BigInt(50),
-      evaluatee: user?.address || "0x0",
-      evaluationFeedback: "Great job!",
-    }
-    const encodedCall = encodeFunctionData({
-      abi: parseAbi(["function submitEvaluation(Evaluations memory evaluationData) external returns (uint256)", "struct Evaluations { uint256 projectId; uint256 score; address evaluatee; string evaluationFeedback;}"]),
-      functionName: "submitEvaluation",
-      args: [data],
-    });
+    // const data = {
+    //   projectId: BigInt(1),
+    //   score: BigInt(50),
+    //   evaluatee: user?.address || "0x0",
+    //   evaluationFeedback: "Great job!",
+    // }
+    // const encodedCall = encodeFunctionData({
+    //   abi: parseAbi(["function submitEvaluation(Evaluations memory evaluationData) external returns (uint256)", "struct Evaluations { uint256 projectId; uint256 score; address evaluatee; string evaluationFeedback;}"]),
+    //   functionName: "submitEvaluation",
+    //   args: [data],
+    // });
 
-    /** The following is when using Biconomy smart wallet **/
-    const tx = {
-      to: import.meta.env.VITE_SMART_CONTRACT_ADDR,
-      data: encodedCall,
-    };
+    // /** The following is when using Biconomy smart wallet **/
+    // const tx = {
+    //   to: import.meta.env.VITE_SMART_CONTRACT_ADDR,
+    //   data: encodedCall,
+    // };
 
-    const { waitForTxHash } = (await smartWallet?.sendTransaction(tx, {
-      paymasterServiceData: { mode: PaymasterMode.SPONSORED },
-    })) as UserOpResponse;
-    const { transactionHash, userOperationReceipt } = await waitForTxHash();
-    console.log("tx", transactionHash);
+    // const { waitForTxHash } = (await smartWallet?.sendTransaction(tx, {
+    //   paymasterServiceData: { mode: PaymasterMode.SPONSORED },
+    // })) as UserOpResponse;
+    // const { transactionHash, userOperationReceipt } = await waitForTxHash();
+    console.log("tx", "transactionHash");
   };
 
   return (
@@ -94,6 +96,24 @@ const CurrentEval = ({ currentEval }: { currentEval: any }) => {
 
 const Evaluations = () => {
   const [currentEval, setCurrentEval] = useState<any | undefined>(undefined);
+  const appData = useContext(AppDataContext);
+  const [isOpen2, setIsOpen2] = useState(false);
+
+
+  useEffect(() => {
+    if (import.meta.env.VITE_DEMO === 'true' && appData?.currentStep === 'eval') {
+      setCurrentEval([
+        {
+          project: appData?.selectedProject?.title,
+          evalOthers: false,
+        },
+        {
+          project: "DeFi Dashboard",
+          evalOthers: true,
+        },
+      ]);
+    }
+  }, [appData?.currentStep]);
 
   // TODO: remove later
   const handleClick = () => {
@@ -111,15 +131,19 @@ const Evaluations = () => {
       ]);
   };
 
+  useEffect(() => {
+    if (appData!.currentStep === "evalsheet") {
+      setIsOpen2(true);
+    }
+  }, [appData?.currentStep]);
 
   return (
     <div className="relative w-full h-full flex flex-col">
-      <button
-        className="absolute top-2 left-2 w-5 h-5 rounded-full bg-red-400"
-        onClick={handleClick}
-      />
       <h2>Evaluations</h2>
-      {currentEval ? <CurrentEval currentEval={currentEval} /> : <NoEval />}
+      {currentEval ? <CurrentEval currentEval={currentEval} /> : <></>}
+      <EvaluationModal isOpen={isOpen2} setOpen={setIsOpen2} />
+
+      {/* https://github.com/johnDoe/nftgallriaa */}
     </div>
   );
 };

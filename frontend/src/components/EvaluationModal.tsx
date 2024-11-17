@@ -7,9 +7,10 @@ import Button from "./Button";
 // import { useWeb3Auth } from "@/hooks/useWeb3Auth";
 import { encodeFunctionData, parseAbi } from "viem";
 import { useSendTransaction } from "@/hooks/useSendTransaction";
+import * as Slider from "@radix-ui/react-slider";
 
 
-const SubmissionModal = ({ isOpen, setOpen }: { isOpen: boolean; setOpen: (open: boolean) => void }) => {
+const EvaluationModal = ({ isOpen, setOpen }: { isOpen: boolean; setOpen: (open: boolean) => void }) => {
   const appData = useContext(AppDataContext);
   // const { pushInstance } = usePushProtocolContext();
   // const { viemWalletClient } = useWeb3Auth();
@@ -37,7 +38,7 @@ const SubmissionModal = ({ isOpen, setOpen }: { isOpen: boolean; setOpen: (open:
       setOpen(false);
     } else {
       setIsLoading(true);
-      appData?.setCurrentStep("eval");
+      appData?.setCurrentStep("complete");
       // sendTransaction(encodedCall);
       setIsLoading(false);
       setOpen(false);
@@ -54,7 +55,7 @@ const SubmissionModal = ({ isOpen, setOpen }: { isOpen: boolean; setOpen: (open:
           <Card className="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-[450px] -translate-x-1/2 -translate-y-1/2 rounded-xl overflow-y-auto z-10 p-4" corner={false} layout={
             <div>
 
-              <h2>Submission</h2>
+              <h2>Evaluation</h2>
 
               <div className="border border-primary-dark mt-2 p-4 rounded shadow">
                 <h2 className="text-xl font-bold mb-2">{appData?.selectedProject?.title}</h2>
@@ -62,11 +63,24 @@ const SubmissionModal = ({ isOpen, setOpen }: { isOpen: boolean; setOpen: (open:
               </div>
 
               <div className="mt-4">
-                <label htmlFor="projectLink" className="block font-bold mb-2">Project Link</label>
-                <input type="text" id="projectLink" className="border border-gray-300 rounded-md px-4 py-2 w-full" />
-
-                {/* <label htmlFor="fileInput" className="block font-bold mt-4 mb-2">File Input</label>
-                <input type="file" id="fileInput" className="border border-gray-300 rounded px-4 py-2 w-full" /> */}
+                <form>
+                  <label htmlFor="projectLink" className="block font-bold mb-2">Feedback</label>
+                  <input type="textarea" id="projectLink" className="border border-gray-300 rounded-md px-4 py-2 w-full" />
+                  <Slider.Root
+                    className="relative flex h-5 w-full mt-2 touch-none select-none items-center"
+                    defaultValue={[1]}
+                    max={5}
+                    step={1}
+                  >
+                    <Slider.Track className="relative h-[3px] grow rounded-full w-full">
+                      <Slider.Range className="absolute h-full rounded-full bg-primary-dark" />
+                    </Slider.Track>
+                    <Slider.Thumb
+                      className="block size-5 rounded-[10px] bg-white shadow-[0_2px_10px] shadow-blackA4 hover:bg-violet3 focus:shadow-[0_0_0_5px] focus:shadow-blackA5 focus:outline-none"
+                      aria-label="Volume"
+                    />
+                  </Slider.Root>
+                </form>
               </div>
               <Button className="w-full mt-8" onClick={handleSubmit}>
                 {isLoading ? "Loading" : "Submit"}
@@ -88,4 +102,4 @@ const SubmissionModal = ({ isOpen, setOpen }: { isOpen: boolean; setOpen: (open:
   )
 }
 
-export default SubmissionModal
+export default EvaluationModal

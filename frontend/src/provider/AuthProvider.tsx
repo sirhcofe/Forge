@@ -2,10 +2,8 @@ import { Web3AuthContextType } from "@/types/user";
 import { AuthAdapter, AuthUserInfo } from "@web3auth/auth-adapter";
 import {
   AccountAbstractionProvider,
-  BiconomySmartAccount,
   SafeSmartAccount,
 } from "@web3auth/account-abstraction-provider";
-import { MetamaskAdapter } from "@web3auth/metamask-adapter";
 import {
   CHAIN_NAMESPACES,
   UX_MODE,
@@ -27,6 +25,7 @@ import {
   custom,
   encodeFunctionData,
   parseAbi,
+  parseGwei,
   PublicClient,
   WalletClient,
 } from "viem";
@@ -36,10 +35,7 @@ import {
   createPaymaster,
   createSmartAccountClient,
   IPaymaster,
-  PaymasterMode,
 } from "@biconomy/account";
-import { ethers } from "ethers";
-
 export const Web3AuthContext = createContext<Web3AuthContextType | null>(null);
 
 const clientId = import.meta.env.VITE_WEB3AUTH_CLIENT_ID;
@@ -60,7 +56,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [pushWalletClient, setPushWalletClient] = useState<WalletClient>();
   const [smartWallet, setSmartWallet] = useState<BiconomySmartAccountV2>();
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] =
     useState<Partial<AuthUserInfo & { address: `0x${string}` }>>();
 
@@ -155,17 +151,60 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     init();
   }, []);
 
-  useEffect(() => {
-    console.log("w3a provider", web3Auth);
-    if (web3Auth && web3AuthProvider) {
-      if (web3Auth.status === ADAPTER_STATUS.CONNECTED && !isLoggedIn)
-        postLoginFlow(web3AuthProvider);
-      setTimeout(() => {
-        // small timeout to wait for set state to finish before setIsLoading to false
-        setIsLoading(false);
-      }, 300);
+  const postLoginFlow = async (provider: IProvider | null) => {
+    if (!web3Auth?.connected || !provider) {
+      toast.error("Login failed!");
+      return;
     }
-  }, [web3Auth?.status, web3AuthProvider, isLoggedIn]);
+    const user = await getUserInfo();
+    const address = await RPC.getAccounts(provider);
+    setUser({ ...user, address });
+
+    const pClient: any = createPublicClient({
+      chain: scrollSepolia,
+      transport: custom(web3AuthProvider!),
+    });
+    setViemPublicClient(pClient);
+    // const [account] = await window.ethereum!.request({ method: 'eth_requestAccounts' })
+
+    const wClient = createWalletClient({
+      account: address,
+      chain: scrollSepolia,
+      transport: custom(web3AuthProvider!),
+    });
+    setViemWalletClient(wClient);
+    // const sw = createWalletClient({
+    //   account: address,
+    //   chain: scrollSepolia,
+    //   transport: custom(web3AuthProvider!),
+    // });
+    // console.log(sw);
+    // setSmartWallet(sw);
+
+    const pushClient = createWalletClient({
+      account: address,
+      chain: sepolia,
+      transport: custom(web3AuthProvider!),
+    });
+    setPushWalletClient(pushClient);
+
+    // const ethersProvider = new ethers.providers.Web3Provider(provider);
+    // const paymaster: IPaymaster = await createPaymaster({
+    //   paymasterUrl: `https://paymaster.biconomy.io/api/v1/534351/${biconomyConfig.biconomyPaymasterApiKey}`,
+    //   strictMode: false,
+    // });
+    // const smartWallet = await createSmartAccountClient({
+    //   signer: ethersProvider.getSigner(),
+    //   biconomyPaymasterApiKey: biconomyConfig.biconomyPaymasterApiKey,
+    //   bundlerUrl: biconomyConfig.bundleUrl,
+    //   paymaster: paymaster,
+    //   rpcUrl: "https://sepolia-rpc.scroll.io",
+    //   chainId: 534351,
+    // });
+    // setSmartWallet(smartWallet);
+
+
+  };
 
   const login = async () => {
     console.log(web3Auth);
@@ -211,83 +250,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const postLoginFlow = async (provider: IProvider | null) => {
-    console.log("here");
-    if (!web3Auth?.connected || !provider) {
-      toast.error("Login failed!");
-      return;
-    }
-    const user = await getUserInfo();
-    const address = await RPC.getAccounts(provider);
-    setUser({ ...user, address });
-
-    const pClient: any = createPublicClient({
-      chain: scrollSepolia,
-      transport: custom(web3AuthProvider!),
-    });
-    setViemPublicClient(pClient);
-    // const [account] = await window.ethereum!.request({ method: 'eth_requestAccounts' })
-
-    const wClient = createWalletClient({
-      account: address,
-      chain: scrollSepolia,
-      transport: custom(web3AuthProvider!),
-    });
-    setViemWalletClient(wClient);
-    // const sw = createWalletClient({
-    //   account: address,
-    //   chain: scrollSepolia,
-    //   transport: custom(web3AuthProvider!),
-    // });
-    // console.log(sw);
-    // setSmartWallet(sw);
-
-    const pushClient = createWalletClient({
-      account: address,
-      chain: sepolia,
-      transport: custom(web3AuthProvider!),
-    });
-    setPushWalletClient(pushClient);
-
-    const ethersProvider = new ethers.providers.Web3Provider(provider);
-    const paymaster: IPaymaster = await createPaymaster({
-      paymasterUrl: `https://paymaster.biconomy.io/api/v1/534351/${biconomyConfig.biconomyPaymasterApiKey}`,
-      strictMode: false,
-    });
-    const smartWallet = await createSmartAccountClient({
-      signer: ethersProvider.getSigner(),
-      biconomyPaymasterApiKey: biconomyConfig.biconomyPaymasterApiKey,
-      bundlerUrl: biconomyConfig.bundleUrl,
-      paymaster: paymaster,
-      rpcUrl: "https://sepolia-rpc.scroll.io",
-      chainId: 534351,
-    });
-    setSmartWallet(smartWallet);
-
-
-    const userInfo = await getUserInfo();
-    const encodedCall = encodeFunctionData({
-      abi: parseAbi(["function createUser(string memory username) external"]),
-      functionName: "createUser",
-      args: [userInfo?.name || "John Doe"],
-    });
-    const tx = {
-      to: import.meta.env.VITE_SMART_CONTRACT_ADDR,
-      data: encodedCall,
-      account: wClient!.account!.address,
-      value: "0x0"
-    };
-    try {
-      await wClient.sendTransaction(tx as any)
-    } catch (error) {
-      console.error("Error sending transaction", error)
-    }
-  };
-
   const logout = async () => {
     if (web3Auth) {
       await web3Auth.logout();
-      setIsLoggedIn(false);
+      // setIsLoggedIn(false);
       setWeb3AuthProvider(null);
       setUser(undefined);
     } else {
@@ -295,6 +261,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
   };
+
+  useEffect(() => {
+    console.log("w3a provider", web3Auth, web3AuthProvider, web3Auth?.status);
+    if (web3Auth && web3AuthProvider) {
+      setTimeout(() => {
+        if (web3Auth.status === ADAPTER_STATUS.CONNECTED) {
+          console.log("hereeeeeee======");
+          postLoginFlow(web3AuthProvider);
+          setIsLoading(false);
+        }
+        console.log("333")
+      }, 1000);
+    }
+  }, [web3Auth, web3Auth?.status, web3AuthProvider]);
 
   return (
     <Web3AuthContext.Provider
